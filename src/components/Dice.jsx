@@ -8,7 +8,7 @@ const Dice = ({ dice, rollDice }) => {
                 <div className="die">{dice[0]}</div>
                 <div className="die">{dice[1]}</div>
             </div>
-            <button onClick={rollDice}>Roll Dice</button>
+            <button onClick={rollDice}>БРОСАЙ КУБИК</button>
         </div>
     );
 };

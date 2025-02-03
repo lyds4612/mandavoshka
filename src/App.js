@@ -149,11 +149,11 @@ const App = () => {
     const currentPlayer = players[currentPlayerIndex];
     return (
         <div className="App">
-            <h1>Пройдите лабиринт!</h1>
+            <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
             <GameBoard board={board} players={players} selectedCell={selectedCell} handleClick={handleClick} />
             <Dice dice={dice} rollDice={rollDice} />
             <Player currentPlayer={currentPlayer} placePiece={placePiece} canPlacePiece={canPlacePiece} />
-            <button onClick={movePiece}>Move Piece</button>
+            <button onClick={movePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
         </div>
     );
 };
