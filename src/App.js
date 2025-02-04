@@ -4,6 +4,10 @@ import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
 import Player from './components/Player';
 
+const d = '♦';
+const h = '♥';
+const c = '♣';
+const s = '♠';
 const App = () => {
     const [board, setBoard] = useState(createInitialBoard());
     const [players, setPlayers] = useState(createInitialPlayers());
@@ -15,29 +19,21 @@ const App = () => {
     const [moveIndex, setMoveIndex] = useState(0);
 
     function createInitialBoard() {
-        const cells = [];
-        for (let i = 0; i < 13; i++) {
-            const row = [];
-            for (let j = 0; j < 13; j++) {
-                let value = '';
-                if (i === 0 && j > 0 && j < 12) {
-                    value = j;
-                } else if (i === 12 && j > 0 && j < 12) {
-                    value = j;
-                } else if (j === 0 && i > 0 && i < 12) {
-                    value = i;
-                } else if (j === 12 && i > 0 && i < 12) {
-                    value = i;
-                } else if ((i === 5 && j === 5) || (i === 5 && j === 7) || (i === 7 && j === 5) || (i === 7 && j === 7)) {
-                    value = getCardSuit(i, j);
-                } else if ((i >= 5 && i <= 7) && (j >= 5 && j <= 7)) {
-                    value = '';
-                }
-                row.push(value);
-            }
-            cells.push(row);
-        }
-        return cells;
+        return [
+            ['', 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, ''],
+            [5, 'III', 'II', 'I', '', '', 1, '', '', '', '', 'III', 5],
+            [4, '', '', '', '', '', 2, '', '', '', '', 'II', 4],
+            [3, '', '', d, '', '', 3, '', '', h, '', 'I', 3],
+            [2, '', '', '', '', '', 4, '', '', '', '', '', 2],
+            [1, '', '', '', '', '', '', '', '', '', '', '', 1],
+            [0, 1, 2, 3, 4, '', '', '', 4, 3, 2, 1, 0],
+            [1, '', '', '', '', '', '', '', '', '', '', '', 1],
+            [2, '', '', '', '', '', 4, '', '', '', '', '', 2],
+            [3, 'I', '', c, '', '', 3, '', '', s, '', '', 3],
+            [4, 'II', '', '', '', '', 2, '', '', '', '', '', 4],
+            [5, 'III', '', '', '', '', 1, '', '', 'I', 'II', 'III', 5],
+            ['', 5, 4, 3, 2, 1, 0, 1, 2, 3, 4, 5, ''],
+        ];
     }
 
     function createInitialPlayers() {
