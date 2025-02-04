@@ -17,18 +17,17 @@
     position: relative;
 }
 
-.cell.♦, .cell.♥ {
-    color: red;
+.cell.♥, .cell.♦, .cell.♠, .cell.♣ {
     font-size: 36px;
 }
 
-.cell.♣, .cell.♠ {
-    color: black;
-    font-size: 36px;
-}
+.cell.♥ { color: red; }
+.cell.♦ { color: orange; }
+.cell.♠ { color: black; }
+.cell.♣ { color: darkgreen; }
 
 .cell.selected {
-    background-color: #add8e6; /* Цвет выделенной клетки */
+    background-color: #add8e6;
 }
 
 .piece {

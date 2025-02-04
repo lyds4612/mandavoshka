@@ -9,7 +9,7 @@ const h = '♥';
 const c = '♣';
 const s = '♠';
 const App = () => {
-    const [board, setBoard] = useState(createInitialBoard());
+    const [board] = useState(createInitialBoard());
     const [players, setPlayers] = useState(createInitialPlayers());
     const [selectedCell, setSelectedCell] = useState(null);
     const [currentPlayerIndex, setCurrentPlayerIndex] = useState(0);
@@ -61,37 +61,21 @@ const App = () => {
         return path;
     }
 
-    function getCardSuit(i, j) {
-        if (i === 5 && j === 5) return '♦';
-        if (i === 5 && j === 7) return '♥';
-        if (i === 7 && j === 5) return '♣';
-        if (i === 7 && j === 7) return '♠';
-        return '';
-    }
-
     function handleClick(row, col) {
         setSelectedCell({ row, col });
     }
 
-    function rollDice() {
+    const rollDice = () => {
         const newDice = [Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)];
         setDice(newDice);
 
-        let newPlayers = [...players];
-        let currentPlayer = newPlayers[currentPlayerIndex];
-
         if (newDice.includes(6)) {
             setCanPlacePiece(true);
-            const remainingMoves = newDice[0] === 6 ? newDice[1] : newDice[0];
-            setMoves([6, remainingMoves]);
+            setMoves([6, newDice.find(d => d !== 6) || 6]);
         } else {
-            const sortedDice = newDice.sort((a, b) => b - a);
-            setMoves(sortedDice);
-            setMoveIndex(0);
+            setMoves([...newDice].sort((a, b) => b - a));
         }
-
-        setPlayers(newPlayers);
-    }
+    };
 
     function placePiece() {
         if (canPlacePiece) {
