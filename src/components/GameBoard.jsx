@@ -5,7 +5,7 @@ const GameBoard = ({ board, players, selectedCell, handleClick }) => {
     return (
         <div id="game-board">
             {board.map((row, rowIndex) => (
-                <div key={rowIndex} className="row">
+                <div key={rowIndex} className={`row row-${rowIndex}`}>
                     {row.map((cell, cellIndex) => {
                         const playerPiece = players.find(player =>
                             player.positions.some(([r, c]) => r === rowIndex && c === cellIndex)
@@ -13,7 +13,7 @@ const GameBoard = ({ board, players, selectedCell, handleClick }) => {
                         return (
                             <div
                                 key={cellIndex}
-                                className={`cell ${cell} ${selectedCell && selectedCell.row === rowIndex && selectedCell.col === cellIndex ? 'selected' : ''}`}
+                                className={`cell row-${rowIndex} col-${cellIndex} ${selectedCell && selectedCell.row === rowIndex && selectedCell.col === cellIndex ? 'selected' : ''}`}
                                 onClick={() => handleClick(rowIndex, cellIndex)}
                             >
                                 {playerPiece ? <div className="piece" style={{ backgroundColor: playerPiece.color }}></div> : cell}
