@@ -35,6 +35,40 @@ const App = () => {
             ['',     5,    4,    3,    2,    1,    0,     1,    2,     3,     4,      5,   ''],
         ];
     }
+    let move = [];
+    let pos = [0, 0];
+    let index = []
+    const rotate = () => {
+        const [x, y] = move;
+        if (!x && !y) {
+            move = [1, 0];
+        }
+        if (x === 1 && y === 0) {
+            move = [0, 1];
+        }
+        if (x === 0 && y === 1) {
+            move = [-1, 0];
+        }
+        if (x === -1 && y === 0) {
+            move = [0, -1];
+        }
+    };
+    const side = 12;
+    const max = side * 4;
+    for (let i = 0; i < max; i++) {
+        if (i !== 0) {
+            if (move[0] !== 0) {
+                pos[0] += move[0];
+            }
+            if (move[1] !== 0) {
+                pos[1] += move[1];
+            }
+        }
+        index.push([pos[1], pos[0]]);
+        if ((i % side) === 0) {
+            rotate();
+        }
+    }
 
     function createInitialPlayers() {
         return [
