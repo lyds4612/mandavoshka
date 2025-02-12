@@ -5,7 +5,7 @@ const Player = ({ currentPlayer, placePiece, canPlacePiece }) => {
     return (
         <div className="current-player">
             <div>
-                ТЕКУЩИЙ ИГРОК: <span style={{ color: currentPlayer.color }}>{currentPlayer.id}</span>
+                ТЕКУЩИЙ ИГРОК: <span style={{ color: currentPlayer.color }}>{currentPlayer.color}</span>
             </div>
             <div className="remaining-pieces">
                 {Array.from({ length: currentPlayer.pieces }).map((_, index) => (
