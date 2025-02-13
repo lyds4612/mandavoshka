@@ -1,7 +1,7 @@
 class Player {
     constructor(color, start) {
         this.color = color;
-        this.start = 0;
+        this.start = start;
         this.canGoToHome = false;
         this.pieces = [
             new Piece(color, this),
@@ -24,18 +24,21 @@ class Piece {
 class Tile {
     constructor(name, index) {
         this.index = index;
-        this.name = name
-        this.pieces = []
+        this.name = name;
+        this.pieces = [];
     }
     placePiece(piece) {
-        this.pieces.add(piece);
+        this.pieces.push(piece);
     }
-    // removePiece(piece) {
-    //     this.pieces.find(piece => piece.name === piece.name);
-    // }
+    removePiece(piece) {
+        const index = this.pieces.findIndex(p => p === piece);
+        if (index > -1) {
+            this.pieces.splice(index, 1);
+        }
+    }
 }
 
-class GameState {
+class GameState implements ProxyConstructor {
     #currentPlayerIndex = 0;
     constructor() {
         const side = 13;
@@ -47,7 +50,7 @@ class GameState {
             return new Tile('freedom', i)
         });
 
-        const getStartPos = (offset ) => 6 + side * offset;
+        const getStartPos = (offset) => 6 + side * offset;
         this.players = [
             new Player('red', getStartPos(1)),
             new Player('blue', getStartPos(2)),
@@ -61,29 +64,56 @@ class GameState {
         if (this.#currentPlayerIndex === 3) {
             this.#currentPlayerIndex = 0;
         } else {
-            this.#currentPlayerIndex++;
+            this.#currentPlayerIndex += 1;
         }
-        return this.players[this.#currentPlayerIndex];
+        this.player = this.players[this.#currentPlayerIndex]
     }
 
     rollDice(player) {
-        const dice = [Math.ceil(Math.random() * 6), Math.ceil(Math.random() * 6)];
+        const roll = () => Math.ceil(Math.random() * 6)
+        const dice = [roll(), roll()];
         //todo check if player has pieces in jail,
-        const canMove = (dice.includes(6) && player.pieces === 4) || true;
 
-        if (!canMove) {
+        const pieces = player.pieces;
+        // const canMove = pieces.some(piece => piece.tile !== null);
+        const canMove = false;
+        const canPlace = dice.includes(6) && pieces.some(piece => piece.tile === null);
+        // const canRoll = dice.every(i => i === 6);
+        const canRoll = true;
+        if (!canPlace && !canMove) {
             this.changePlayer();
+            return {
+                dice: ['-', '-'],
+                canRoll: true,
+                canMove: false,
+                canPlace: false,
+            }
         }
 
-        return dice;
+        return {
+            dice,
+            canMove,
+            canPlace,
+            canRoll,
+        };
     }
 
-    placePiece (player) {
-        console.log('Placing piece', player);
-        if (player.pieces.length) {
-            const piece = player.pop();
-            piece.tile = this.tiles[player.start];
-            this.tiles[player.start].placePiece();
+    placePiece(player) {
+        const piece = player.pieces.filter(piece => piece.tile === null)[0];
+        console.log('Placing piece', piece);
+        if (piece) {
+            const startTile = this.tiles[player.start];
+            piece.tile = startTile;
+            startTile.placePiece(piece);
+            this.changePlayer();
+            return {
+                dice: ['-', '-'],
+                canRoll: true,
+                canMove: false,
+                canPlace: false,
+            }
+        } else {
+            console.error('Nothing to place', player);
         }
     }
 
@@ -91,7 +121,7 @@ class GameState {
         console.log('Moving piece', piece);
         if (piece.tile) {
             const currentTile = piece.tile;
-            const pieceIndex = currentTile.pieces.findIndex((p) => p.color === piece.player.color);
+            const pieceIndex = currentTile.pieces.findIndex((p) => p === piece.player);
             const nextPlace = currentTile.index + dice;
             currentTile.pieces.splice(pieceIndex, 1)
             piece.tile = this.tiles[nextPlace];

@@ -1,8 +1,7 @@
-import React, { useState } from 'react';
+import React, {useEffect, useState} from 'react';
 import './App.css';
 import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
-import Player from './components/Player';
 import gameState from "./logic/logic";
 
 function createInitialBoard() {
@@ -26,9 +25,12 @@ function createInitialBoard() {
         ['',     5,    4,    3,    2,    1,    0,     1,    2,     3,     4,      5,   ''],
     ];
 }
+const board = createInitialBoard();
+
+function calculateBoardIndexes () {
     let move = [];
     let pos = [0, 0];
-    let index = []
+    let indexes = []
     const rotate = () => {
         const [x, y] = move;
         if (!x && !y) {
@@ -44,7 +46,7 @@ function createInitialBoard() {
             move = [0, -1];
         }
     };
-    const side = 12;
+    const side = 13;
     const max = side * 4;
     for (let i = 0; i < max; i++) {
         if (i !== 0) {
@@ -55,39 +57,111 @@ function createInitialBoard() {
                 pos[1] += move[1];
             }
         }
-        index.push([pos[1], pos[0]]);
+        indexes.push([pos[1], pos[0]]);
         if ((i % side) === 0) {
             rotate();
         }
     }
+    return indexes;
+}
 
 const App = () => {
-    const [state] = useState(gameState)
-    const [board] = useState(createInitialBoard());
-    const [selectedCell, setSelectedCell] = useState(null);
-    const [dice, setDice] = useState([1, 1]);
-    const [canPlacePiece] = useState(false);
-    const [player] = useState(state.player);
+    const [state] = useState(gameState);
+    const [updateCount, setUpdateCount] = useState(0);
+    const [dice, setDice] = useState(['-', '-']);
+    const [selectedTile, setSelectedTile] = useState(null);
+    const [cellIndexes] = useState(calculateBoardIndexes());
+    const [canPlace, setCanPlace] = useState(false);
+    const [canMove, setCanMove] = useState(false);
+    const [canRoll, setCanRoll] = useState(true);
 
-    function handleClick(row, col) {
-        setSelectedCell({ row, col });
+
+    useEffect(() => {
+        console.log(updateCount);
+        console.log(gameState);
+        console.log(canMove,
+            canPlace,
+            canRoll);
+    });
+
+    const forceUpdate = () => setUpdateCount((prev) => prev + 1);
+
+    const findCellIndex = (rowIndex, cellIndex) => {
+        return cellIndexes.findIndex(([x, y]) => x === rowIndex && y === cellIndex);
+    };
+
+    function selectTile(rowIndex, cellIndex) {
+        console.log('Tile clicked at:', rowIndex, cellIndex);
+        const index = findCellIndex(rowIndex, cellIndex);
+        if (index === -1) {
+            console.error(`Tile not found with index: ${index}`);
+            return;
+        }
+        const tile = state.tiles[index];
+        setSelectedTile(tile);
+        forceUpdate();
     }
 
     function rollDice() {
-        setDice(state.rollDice(player))
+        const {
+            canMove,
+            canPlace,
+            canRoll,
+            dice: newDice
+        } = state.rollDice(state.player);
+        setCanMove(canMove);
+        setCanPlace(canPlace);
+        setCanRoll(canRoll);
+
+        setDice(newDice);
+        forceUpdate();
     }
 
-    function placePiece(dice, piece) {
+    function placePiece() {
+        const {
+            canMove,
+            canPlace,
+            canRoll,
+            dice: newDice
+        } = state.placePiece(state.player);
+        setCanMove(canMove);
+        setCanPlace(canPlace);
+        setCanRoll(canRoll);
 
+        setDice(newDice);
+        forceUpdate();
     }
+
+    function movePiece() {
+        const piece = state.player.pieces[0];
+        if (piece) {
+            const index = state.movePiece(dice[0], piece);
+            forceUpdate();
+        }
+    }
+
+    const {color, pieces} = state.player;
+    const Pieces = pieces.map((piece, index) => (
+        <div key={index} className="piece" style={{ backgroundColor: piece.color }}></div>
+    ))
 
     return (
         <div className="App">
             <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
-            <GameBoard board={board} players={state.players} selectedCell={selectedCell} handleClick={handleClick} />
-            <Dice dice={dice} rollDice={rollDice} />
-            <Player currentPlayer={player} placePiece={placePiece} canPlacePiece={canPlacePiece} />
-            <button onClick={state.movePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
+            <GameBoard board={board} players={state.players} onTileClick={selectTile}/>
+
+            <Dice dice={dice}/>
+            {canRoll && <button onClick={rollDice}>БРОСАЙ КУБИК</button>}
+            <div className="current-player">
+                <div>
+                    ТЕКУЩИЙ ИГРОК: <span style={{color}}>{color}</span>
+                </div>
+                <div className="remaining-pieces">
+                    {Pieces}
+                </div>
+                {canPlace && <button onClick={placePiece}>ПОСТАВИТЬ ФИГУРУ</button>}
+                {canMove && <button disabled={!selectedTile} onClick={movePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>}
+            </div>
         </div>
     );
 };

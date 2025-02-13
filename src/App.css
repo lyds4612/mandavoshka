@@ -30,3 +30,14 @@ button:active {
     background-color: #004499;
     transform: scale(0.95);
 }
+
+.current-player {
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+.remaining-pieces {
+    margin-top: 5px;
+    display: flex;
+    flex-wrap: wrap;
+}
