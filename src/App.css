@@ -25,10 +25,15 @@ button {
 button:hover {
     background-color: #0056b3;
 }
-
 button:active {
     background-color: #004499;
     transform: scale(0.95);
+}
+
+button:disabled {
+    background-color: #b7b7b7;
+    cursor: initial;
+    transform: scale(1);
 }
 
 .current-player {
@@ -40,4 +45,5 @@ button:active {
     margin-top: 5px;
     display: flex;
     flex-wrap: wrap;
+    justify-content: space-evenly;
 }

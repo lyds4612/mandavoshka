@@ -1,9 +1,12 @@
-import React, {useEffect, useState} from 'react';
+// App.js
+import React, { useState } from 'react';
+import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
 import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
-import gameState from "./logic/logic";
+import {movePiece, placePiece, resetGame, rollDice} from "./store/gameSlice";
 
+// This function creates a board representation (e.g. for display)
 function createInitialBoard() {
     const d = '♦';
     const h = '♥';
@@ -25,24 +28,20 @@ function createInitialBoard() {
         ['',     5,    4,    3,    2,    1,    0,     1,    2,     3,     4,      5,   ''],
     ];
 }
-const board = createInitialBoard();
 
-function calculateBoardIndexes () {
+// This helper calculates board cell positions (if needed for your UI)
+function calculateBoardIndexes() {
     let move = [];
     let pos = [0, 0];
-    let indexes = []
+    let indexes = [];
     const rotate = () => {
-        const [x, y] = move;
-        if (!x && !y) {
+        if (!move[0] && !move[1]) {
             move = [1, 0];
-        }
-        if (x === 1 && y === 0) {
+        } else if (move[0] === 1 && move[1] === 0) {
             move = [0, 1];
-        }
-        if (x === 0 && y === 1) {
+        } else if (move[0] === 0 && move[1] === 1) {
             move = [-1, 0];
-        }
-        if (x === -1 && y === 0) {
+        } else if (move[0] === -1 && move[1] === 0) {
             move = [0, -1];
         }
     };
@@ -66,104 +65,87 @@ function calculateBoardIndexes () {
 }
 
 const App = () => {
-    const [state] = useState(gameState);
-    const [updateCount, setUpdateCount] = useState(0);
-    const [dice, setDice] = useState(['-', '-']);
+    const dispatch = useDispatch();
+
+    const tiles = useSelector((state) => state.game.tiles);
+    const players = useSelector((state) => state.game.players);
+    const currentPlayer = useSelector((state) => state.game.currentPlayer);
+    const dice = useSelector((state) => state.game.dice);
+    const canRoll = useSelector((state) => state.game.canRoll);
+    const canMove = useSelector((state) => state.game.canMove);
+    const canPlace = useSelector((state) => state.game.canPlace);
+    const moves = useSelector((state) => state.game.moves);
+
     const [selectedTile, setSelectedTile] = useState(null);
     const [cellIndexes] = useState(calculateBoardIndexes());
-    const [canPlace, setCanPlace] = useState(false);
-    const [canMove, setCanMove] = useState(false);
-    const [canRoll, setCanRoll] = useState(true);
-
-
-    useEffect(() => {
-        console.log(updateCount);
-        console.log(gameState);
-        console.log(canMove,
-            canPlace,
-            canRoll);
-    });
-
-    const forceUpdate = () => setUpdateCount((prev) => prev + 1);
+    const board = createInitialBoard();
 
     const findCellIndex = (rowIndex, cellIndex) => {
-        return cellIndexes.findIndex(([x, y]) => x === rowIndex && y === cellIndex);
+        return cellIndexes.findIndex(
+            ([x, y]) => x === rowIndex && y === cellIndex
+        );
     };
 
     function selectTile(rowIndex, cellIndex) {
-        console.log('Tile clicked at:', rowIndex, cellIndex);
         const index = findCellIndex(rowIndex, cellIndex);
+        console.log('Tile clicked at:', rowIndex, cellIndex, index);
         if (index === -1) {
             console.error(`Tile not found with index: ${index}`);
             return;
         }
-        const tile = state.tiles[index];
+
+        const tile = tiles[index];
         setSelectedTile(tile);
-        forceUpdate();
     }
 
-    function rollDice() {
-        const {
-            canMove,
-            canPlace,
-            canRoll,
-            dice: newDice
-        } = state.rollDice(state.player);
-        setCanMove(canMove);
-        setCanPlace(canPlace);
-        setCanRoll(canRoll);
+    const handleRollDice = () => {
+        dispatch(rollDice());
+    };
 
-        setDice(newDice);
-        forceUpdate();
-    }
+    const handlePlacePiece = () => {
+        dispatch(placePiece());
+    };
 
-    function placePiece() {
-        const {
-            canMove,
-            canPlace,
-            canRoll,
-            dice: newDice
-        } = state.placePiece(state.player);
-        setCanMove(canMove);
-        setCanPlace(canPlace);
-        setCanRoll(canRoll);
+    const handleMovePiece = () => {
+        dispatch(movePiece({ dice: dice[0], pieceIndex: 0 }));
+    };
 
-        setDice(newDice);
-        forceUpdate();
-    }
-
-    function movePiece() {
-        const piece = state.player.pieces[0];
-        if (piece) {
-            const index = state.movePiece(dice[0], piece);
-            forceUpdate();
-        }
-    }
-
-    const {color, pieces} = state.player;
+    const { color, pieces } = currentPlayer;
     const Pieces = pieces.map((piece, index) => (
-        <div key={index} className="piece" style={{ backgroundColor: piece.color }}></div>
-    ))
+        <div key={index} className="piece" style={{ backgroundColor: piece.color }}>
+            {index}
+        </div>
+    ));
 
     return (
         <div className="App">
             <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
-            <GameBoard board={board} players={state.players} onTileClick={selectTile}/>
-
-            <Dice dice={dice}/>
-            {canRoll && <button onClick={rollDice}>БРОСАЙ КУБИК</button>}
+            <ResetGame/>
+            <GameBoard board={board} players={players} onTileClick={selectTile} />
+            <Dice dice={dice} />
+            <button disabled={!canRoll} onClick={handleRollDice}>БРОСАЙ КУБИК</button>
             <div className="current-player">
                 <div>
-                    ТЕКУЩИЙ ИГРОК: <span style={{color}}>{color}</span>
+                    ТЕКУЩИЙ ИГРОК: <span style={{ color }}>{color}</span>
                 </div>
-                <div className="remaining-pieces">
-                    {Pieces}
-                </div>
-                {canPlace && <button onClick={placePiece}>ПОСТАВИТЬ ФИГУРУ</button>}
-                {canMove && <button disabled={!selectedTile} onClick={movePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>}
+                <div>Ходов: {moves.length}</div>
+                <div className="remaining-pieces">{Pieces}</div>
+               <button disabled={!canPlace} onClick={handlePlacePiece}>ПОСТАВИТЬ ФИГУРУ</button>
+               <button disabled={!selectedTile && !canMove} onClick={handleMovePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
             </div>
         </div>
     );
 };
+
+const ResetGame = () => {
+    const dispatch = useDispatch();
+
+    const onClick = () => {
+        dispatch(resetGame());
+    }
+    return <button onClick={onClick}>
+        Reset
+    </button>
+}
 
 export default App;

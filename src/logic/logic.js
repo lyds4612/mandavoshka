@@ -3,6 +3,8 @@ class Player {
         this.color = color;
         this.start = start;
         this.canGoToHome = false;
+
+        this.moves = [];
         this.pieces = [
             new Piece(color, this),
             new Piece(color, this),
