@@ -1,4 +1,5 @@
 import {createSlice} from '@reduxjs/toolkit';
+import {createInitialGameState} from "./gameBoardInit";
 
 const createInitialPlayerState = (state, action) => {
     state.dice = [null, null];
@@ -8,48 +9,6 @@ const createInitialPlayerState = (state, action) => {
     state.moves = [];
 }
 
-const createInitialGameState = () => {
-    const side = 13;
-    const tiles = Array(side * 4)
-        .fill(null)
-        .map((_, i) => ({
-            index: i,
-            name: i > 0 && i % 6 === 0 ? 'start' : 'freedom',
-            pieces: [],
-        }));
-
-    const getStartPos = (offset) => 6 + side * (offset - 1);
-
-    const players = [
-        { color: 'red', start: getStartPos(1), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'blue', start: getStartPos(2), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'green', start: getStartPos(3), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'yellow', start: getStartPos(4), canGoToHome: false, moves: [], pieces: [] },
-    ];
-
-    players.forEach((player) => {
-        player.pieces = Array(4)
-            .fill(null)
-            .map(() => ({
-                color: player.color,
-                tile: null,
-            }));
-    });
-
-    console.log(`Game created with ${players.length} players and ${tiles.length} tiles`);
-    console.log(`Starting position for players`, players.map((player) => player.start));
-
-    const state = {
-        currentPlayerIndex: 0,
-        tiles,
-        players,
-        currentPlayer: players[0],
-    }
-
-    createInitialPlayerState(state);
-
-    return state
-};
 
 const initialState = createInitialGameState();
 
@@ -137,11 +96,9 @@ const gameSlice = createSlice({
             if (!piece) return;
 
             if (piece.tile !== null) {
-                // Remove the piece from its current tile.
                 const currentTile = state.tiles[piece.tile];
                 currentTile.pieces = currentTile.pieces.filter((p) => p !== piece);
 
-                // Calculate the new tile position.
                 const nextPlace = piece.tile + dice;
                 piece.tile = nextPlace;
 
@@ -152,7 +109,6 @@ const gameSlice = createSlice({
                     console.error('Next tile does not exist for index', nextPlace);
                 }
             } else {
-                // If the piece isn't on the board yet, move it to the start.
                 const startTile = state.tiles[player.start];
                 piece.tile = startTile.index;
                 startTile.pieces.push(piece);

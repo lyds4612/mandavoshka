@@ -1,4 +1,3 @@
-// App.js
 import React, { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
@@ -6,7 +5,6 @@ import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
 import {movePiece, placePiece, resetGame, rollDice} from "./store/gameSlice";
 
-// This function creates a board representation (e.g. for display)
 function createInitialBoard() {
     const d = '♦';
     const h = '♥';
@@ -19,7 +17,7 @@ function createInitialBoard() {
         [3,     '',   '',    d,   '',   '',    3,    '',   '',    h,    '',     'I',    3],
         [2,     '',   '',   '',   '',   '',    4,    '',   '',   '',    '',      '',    2],
         [1,     '',   '',   '',   '',  '|',  '|',   '|',   '',   '',    '',      '',    1],
-        [0,      1,    2,    3,    4,  '-',   '',   '-',    4,    3,     2,       1,    0],
+        [0,      1,    2,    3,    4,  '-',   '⛓️',   '-',    4,    3,     2,       1,    0],
         [1,     '',   '',   '',   '',  '|',  '|',   '|',   '',   '',    '',      '',    1],
         [2,     '',   '',   '',   '',   '',    4,    '',   '',   '',    '',      '',    2],
         [3,    'I',   '',    c,   '',   '',    3,    '',   '',    s,    '',      '',    3],
@@ -29,46 +27,11 @@ function createInitialBoard() {
     ];
 }
 
-// This helper calculates board cell positions (if needed for your UI)
-function calculateBoardIndexes() {
-    let move = [];
-    let pos = [0, 0];
-    let indexes = [];
-    const rotate = () => {
-        if (!move[0] && !move[1]) {
-            move = [1, 0];
-        } else if (move[0] === 1 && move[1] === 0) {
-            move = [0, 1];
-        } else if (move[0] === 0 && move[1] === 1) {
-            move = [-1, 0];
-        } else if (move[0] === -1 && move[1] === 0) {
-            move = [0, -1];
-        }
-    };
-    const side = 13;
-    const max = side * 4;
-    for (let i = 0; i < max; i++) {
-        if (i !== 0) {
-            if (move[0] !== 0) {
-                pos[0] += move[0];
-            }
-            if (move[1] !== 0) {
-                pos[1] += move[1];
-            }
-        }
-        indexes.push([pos[1], pos[0]]);
-        if ((i % side) === 0) {
-            rotate();
-        }
-    }
-    return indexes;
-}
 
 const App = () => {
     const dispatch = useDispatch();
-
+    const tileIndexes  = useSelector((state) => state.game.tileIndexes)
     const tiles = useSelector((state) => state.game.tiles);
-    const players = useSelector((state) => state.game.players);
     const currentPlayer = useSelector((state) => state.game.currentPlayer);
     const dice = useSelector((state) => state.game.dice);
     const canRoll = useSelector((state) => state.game.canRoll);
@@ -77,18 +40,17 @@ const App = () => {
     const moves = useSelector((state) => state.game.moves);
 
     const [selectedTile, setSelectedTile] = useState(null);
-    const [cellIndexes] = useState(calculateBoardIndexes());
     const board = createInitialBoard();
 
     const findCellIndex = (rowIndex, cellIndex) => {
-        return cellIndexes.findIndex(
+        return tileIndexes.index.findIndex(
             ([x, y]) => x === rowIndex && y === cellIndex
         );
     };
 
     function selectTile(rowIndex, cellIndex) {
         const index = findCellIndex(rowIndex, cellIndex);
-        console.log('Tile clicked at:', rowIndex, cellIndex, index);
+        console.log('Tile clicked at:', rowIndex, cellIndex, 'index:', index);
         if (index === -1) {
             console.error(`Tile not found with index: ${index}`);
             return;
@@ -119,10 +81,13 @@ const App = () => {
 
     return (
         <div className="App">
-            <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
-            <ResetGame/>
-            <GameBoard board={board} players={players} onTileClick={selectTile} />
-            <Dice dice={dice} />
+            <div>
+                <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
+                <ResetGame/>
+                <GameBoard board={board} onTileClick={selectTile}/>
+            </div>
+
+            <Dice dice={dice}/>
             <button disabled={!canRoll} onClick={handleRollDice}>БРОСАЙ КУБИК</button>
             <div className="current-player">
                 <div>
