@@ -73,7 +73,7 @@ export const createInitialGameState = () => {
         { color: 'red', start: getStartPos(1), canGoToHome: false, moves: [], pieces: [] },
         { color: 'blue', start: getStartPos(2), canGoToHome: false, moves: [], pieces: [] },
         { color: 'green', start: getStartPos(3), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'yellow', start: getStartPos(4), canGoToHome: false, moves: [], pieces: [] },
+        { color: 'orange', start: getStartPos(4), canGoToHome: false, moves: [], pieces: [] },
     ];
 
     players.forEach((player) => {

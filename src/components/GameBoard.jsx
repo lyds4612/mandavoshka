@@ -39,9 +39,14 @@ const GameBoard = ({ board, onTileClick }) => {
                             classNames.push('selected')
                         }
 
-                        // if (cell === '') {
-                        //     classNames.push('empty');
-                        // }
+                        const figures = ['♥', '♦', '♠', '♣']
+                        if (figures.includes(cell)) {
+                            classNames.push(cell)
+                        }
+
+                        if (cell === '') {
+                            classNames.push('empty');
+                        }
 
                         const className = classNames.join(' ');
 

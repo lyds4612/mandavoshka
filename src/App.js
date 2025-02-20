@@ -11,7 +11,7 @@ function createInitialBoard() {
     const c = '♣';
     const s = '♠';
     return [
-        ['',     5,    4,    3,    2,    1,    0,     1,    2,    3,     4,       5,   ''],
+        [6,     5,    4,    3,    2,    1,    0,     1,    2,    3,     4,       5,   6],
         [5,  'III', 'II',  'I',   '',   '',    1,    '',   '',   '',    '',   'III',    5],
         [4,     '',   '',   '',   '',   '',    2,    '',   '',   '',    '',    'II',    4],
         [3,     '',   '',    d,   '',   '',    3,    '',   '',    h,    '',     'I',    3],
@@ -23,7 +23,7 @@ function createInitialBoard() {
         [3,    'I',   '',    c,   '',   '',    3,    '',   '',    s,    '',      '',    3],
         [4,   'II',   '',   '',   '',   '',    2,    '',   '',   '',    '',      '',    4],
         [5,  'III',   '',   '',   '',   '',    1,    '',   '',   'I',  'II',  'III',    5],
-        ['',     5,    4,    3,    2,    1,    0,     1,    2,     3,     4,      5,   ''],
+        [6,     5,    4,    3,    2,    1,    0,     1,    2,     3,     4,      5,   6],
     ];
 }
 
@@ -33,7 +33,6 @@ const App = () => {
     const tileIndexes  = useSelector((state) => state.game.tileIndexes)
     const tiles = useSelector((state) => state.game.tiles);
     const currentPlayer = useSelector((state) => state.game.currentPlayer);
-    const dice = useSelector((state) => state.game.dice);
     const canRoll = useSelector((state) => state.game.canRoll);
     const canMove = useSelector((state) => state.game.canMove);
     const canPlace = useSelector((state) => state.game.canPlace);
@@ -68,35 +67,37 @@ const App = () => {
         dispatch(placePiece());
     };
 
-    const handleMovePiece = () => {
-        dispatch(movePiece({ dice: dice[0], pieceIndex: 0 }));
-    };
+    // const handleMovePiece = () => {
+    //     dispatch(movePiece({ dice: dice[0], pieceIndex: 0 }));
+    // };
 
     const { color, pieces } = currentPlayer;
     const Pieces = pieces.map((piece, index) => (
-        <div key={index} className="piece" style={{ backgroundColor: piece.color }}>
-            {index}
-        </div>
+        <div key={index} className="piece" style={{ backgroundColor: piece.color }}/>
     ));
 
     return (
         <div className="App">
             <div>
-                <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
-                <ResetGame/>
+                <div>
+                    <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
+                    <ResetGame/>
+                </div>
                 <GameBoard board={board} onTileClick={selectTile}/>
             </div>
 
-            <Dice dice={dice}/>
-            <button disabled={!canRoll} onClick={handleRollDice}>БРОСАЙ КУБИК</button>
             <div className="current-player">
+                <Dice/>
+                <button disabled={!canRoll} onClick={handleRollDice}>БРОСАЙ КУБИК</button>
                 <div>
-                    ТЕКУЩИЙ ИГРОК: <span style={{ color }}>{color}</span>
+                    ТЕКУЩИЙ ИГРОК: <span style={{color}}>{color}</span>
                 </div>
                 <div>Ходов: {moves.length}</div>
                 <div className="remaining-pieces">{Pieces}</div>
-               <button disabled={!canPlace} onClick={handlePlacePiece}>ПОСТАВИТЬ ФИГУРУ</button>
-               <button disabled={!selectedTile && !canMove} onClick={handleMovePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
+                <div>
+                    <button disabled={!canPlace} onClick={handlePlacePiece}>ПОСТАВИТЬ ФИГУРУ</button>
+                    <button disabled={!selectedTile && !canMove} onClick={{/*handleMovePiece*/}}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
+                </div>
             </div>
         </div>
     );

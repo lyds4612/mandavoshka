@@ -37,7 +37,7 @@ const gameSlice = createSlice({
     reducers: {
         rollDice(state) {
             const dice = [roll(), roll()];
-            const moves = dice.sort((a, b) => b - a);
+            const moves = [...dice].sort((a, b) => b - a);
             console.log('Dice:', dice.join(', '));
             state.moves = moves;
             state.dice = dice;

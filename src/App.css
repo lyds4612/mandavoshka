@@ -40,13 +40,16 @@ button:disabled {
 }
 
 .current-player {
-    margin-top: 10px;
-    font-size: 18px;
+    gap: 8px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
 }
 
 .remaining-pieces {
-    margin-top: 5px;
     display: flex;
     flex-wrap: wrap;
-    justify-content: space-evenly;
+    gap: 30px;
+    align-content: center;
+    justify-content: center;
 }
