@@ -12,12 +12,10 @@ const Dice = () => {
         if (die === bestMove) {
             classNames.push('current');
         }
-
         const className = classNames.join(' ')
 
-        return <div className={className}>{die}</div>
+        return <div key={idx} className={className}>{die}</div>
     })
-
 
     return (
         <div className="controls">

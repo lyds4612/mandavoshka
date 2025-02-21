@@ -6,9 +6,8 @@ const createInitialPlayerState = (state, action) => {
     state.canRoll = true;
     state.canMove = false;
     state.canPlace = false;
-    state.moves = [];
+    state.moves = []
 }
-
 
 const initialState = createInitialGameState();
 
@@ -21,14 +20,23 @@ const roll = () => Math.ceil(Math.random() * 6);
 
 const recalculatePlayerState = (state) => {
     const player = state.currentPlayer;
+    const pieces = state.pieces[player.color];
 
-    const canMove = player.pieces.some((piece) => piece.tile !== null);
-    const hasPiecesInHands = player.pieces.some((piece) => piece.tile === null);
+    const canMove = pieces.some((piece) => piece.tile !== null);
+    const hasPiecesInHands = pieces.some((piece) => piece.tile === null);
     const canPlace = state.dice.includes(6) && hasPiecesInHands;
-    const canRoll = state.moves && state.moves.length > 0;
+    const canRoll = state.moves.length === 0;
     state.canMove = canMove;
     state.canPlace = canPlace;
     state.canRoll = canRoll;
+}
+
+const recalculateMoves = (state) => {
+    const dice = state.moves[0];
+    state.moves.shift();
+    state.dice[state.dice.indexOf(dice)] = null
+    console.log('Dice is used:', state.dice);
+    console.log('Moves:', state.moves);
 }
 
 const gameSlice = createSlice({
@@ -52,36 +60,10 @@ const gameSlice = createSlice({
         },
         placePiece(state) {
             const player = state.currentPlayer;
-            const pieceIndex = player.pieces.findIndex((piece) => piece.tile === null);
+            const piece = state.pieces[player.color].find((piece) => piece.tile === null);
+            piece.tile = player.start;
 
-            if (state.moves.length === 0) {
-                console.error('BUG: Player should have moves, but nothing is here', player);
-                createInitialPlayerState(state);
-                changePlayer(state);
-                return;
-            }
-
-            if (!state.dice.includes(6)) {
-                console.error('BUG: No 6 on dice ???', player);
-                createInitialPlayerState(state);
-                changePlayer(state);
-                return;
-            }
-            if (pieceIndex === -1) {
-                console.error('BUG: No piece available to place', player);
-                createInitialPlayerState(state);
-                changePlayer(state);
-                return;
-            }
-            const piece = player.pieces[pieceIndex];
-            const startTile = state.tiles[player.start];
-            piece.tile = startTile.index;
-            startTile.pieces.push(piece);
-
-            const dice = state.moves[0];
-            state.moves.shift();
-            state.dice[state.dice.indexOf(dice)] = null
-            console.log('Dice is used', dice);
+            recalculateMoves(state);
             console.log('Piece set to', piece.tile);
             recalculatePlayerState(state);
             if (state.moves.length === 0) {
@@ -89,29 +71,23 @@ const gameSlice = createSlice({
                 changePlayer(state);
             }
         },
-        movePiece(state, action) {
-            const { dice, pieceIndex } = action.payload;
+        movePiece(state, { payload: tileIndex }) {
             const player = state.currentPlayer;
-            const piece = player.pieces[pieceIndex];
-            if (!piece) return;
-
-            if (piece.tile !== null) {
-                const currentTile = state.tiles[piece.tile];
-                currentTile.pieces = currentTile.pieces.filter((p) => p !== piece);
-
-                const nextPlace = piece.tile + dice;
-                piece.tile = nextPlace;
-
-                const nextTile = state.tiles[nextPlace];
-                if (nextTile) {
-                    nextTile.pieces.push(piece);
-                } else {
-                    console.error('Next tile does not exist for index', nextPlace);
-                }
+            console.log(tileIndex);
+            const piece = state.pieces[player.color].find((piece) => piece.tile === tileIndex);
+            console.log(piece);
+            if (piece) {
+                piece.tile = piece.tile + state.moves[0];
             } else {
-                const startTile = state.tiles[player.start];
-                piece.tile = startTile.index;
-                startTile.pieces.push(piece);
+                console.error(`Piece of ${state.currentPlayer.color} not found on ${tileIndex}`)
+                return;
+            }
+
+            recalculateMoves(state);
+
+            if (state.moves.length === 0) {
+                createInitialPlayerState(state);
+                changePlayer(state);
             }
         },
         resetGame() {

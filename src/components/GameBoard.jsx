@@ -1,17 +1,17 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import './GameBoard.css';
 import {useSelector} from "react-redux";
+import {flattened} from "../helpers";
 
 const GameBoard = ({ board, onTileClick }) => {
     const [selectedCell, setSelectedCell] = useState([]);
     const tileIndexes  = useSelector((state) => state.game.tileIndexes)
     const players = useSelector((state) => state.game.players);
+    const pieces = useSelector((state) => state.game.pieces);
     const tiles = useSelector((state) => state.game.tiles);
     const startPositions = players.map((player) => {
         return player.start;
     })
-
-    console.log(startPositions);
 
     return (
         <div id="game-board">
@@ -22,16 +22,12 @@ const GameBoard = ({ board, onTileClick }) => {
                         const tileIndex = tileIndexes.pos[`${rowIndex}, ${cellIndex}`];
 
                         if (startPositions.includes(tileIndex)) {
-                            style.backgroundColor = 'green'
+                            style.backgroundColor = 'rgba(37,175,56,0.4)'
                         }
+                        const tile = tiles[tileIndex];
 
-                        if (tileIndex > -1) {
-                            const tile = tiles[tileIndex];
-
-
-                            if (tile.name === 'jail') {
-                                style.backgroundColor = 'red'
-                            }
+                        if (tile && tile.name === 'jail') {
+                            style.backgroundColor = 'red'
                         }
 
                         const classNames = ['cell', `col-${cellIndex}`]
@@ -50,6 +46,18 @@ const GameBoard = ({ board, onTileClick }) => {
 
                         const className = classNames.join(' ');
 
+                        let Content;
+
+                        const playerPieces = flattened(pieces).filter(piece => piece.tile === tileIndex);
+                        if (playerPieces.length > 0) {
+                            Content = playerPieces.map((piece) => {
+                                return <div className="piece" style={{backgroundColor: piece.color}}></div>
+                            })
+                        }
+                        else if (cell !== '') {
+                            Content = cell;
+                        }
+
                         return (
                             <div
                                 key={cellIndex}
@@ -64,7 +72,7 @@ const GameBoard = ({ board, onTileClick }) => {
                                     onTileClick(rowIndex, cellIndex);
                                 }}
                             >
-                                {cell !== '' && cell}
+                                {Content}
                             </div>
                         );
                     })}

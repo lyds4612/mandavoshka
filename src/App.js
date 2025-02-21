@@ -32,7 +32,8 @@ const App = () => {
     const dispatch = useDispatch();
     const tileIndexes  = useSelector((state) => state.game.tileIndexes)
     const tiles = useSelector((state) => state.game.tiles);
-    const currentPlayer = useSelector((state) => state.game.currentPlayer);
+    const color = useSelector((state) => state.game.currentPlayer.color);
+    const pieces = useSelector((state) => state.game.pieces);
     const canRoll = useSelector((state) => state.game.canRoll);
     const canMove = useSelector((state) => state.game.canMove);
     const canPlace = useSelector((state) => state.game.canPlace);
@@ -41,21 +42,15 @@ const App = () => {
     const [selectedTile, setSelectedTile] = useState(null);
     const board = createInitialBoard();
 
-    const findCellIndex = (rowIndex, cellIndex) => {
-        return tileIndexes.index.findIndex(
-            ([x, y]) => x === rowIndex && y === cellIndex
-        );
-    };
-
     function selectTile(rowIndex, cellIndex) {
-        const index = findCellIndex(rowIndex, cellIndex);
-        console.log('Tile clicked at:', rowIndex, cellIndex, 'index:', index);
-        if (index === -1) {
-            console.error(`Tile not found with index: ${index}`);
+        const tileIndex = tileIndexes.pos[`${rowIndex}, ${cellIndex}`];
+        console.log('Tile clicked at:', rowIndex, cellIndex, 'index:', tileIndex);
+        if (tileIndex === -1) {
+            console.error(`Tile not found with index: ${tileIndex}`);
             return;
         }
 
-        const tile = tiles[index];
+        const tile = tiles[tileIndex];
         setSelectedTile(tile);
     }
 
@@ -67,12 +62,12 @@ const App = () => {
         dispatch(placePiece());
     };
 
-    // const handleMovePiece = () => {
-    //     dispatch(movePiece({ dice: dice[0], pieceIndex: 0 }));
-    // };
+    const handleMovePiece = () => {
+        console.log(selectedTile);
+        dispatch(movePiece(selectedTile.index));
+    };
 
-    const { color, pieces } = currentPlayer;
-    const Pieces = pieces.map((piece, index) => (
+    const Pieces = pieces[color].map((piece, index) => (
         <div key={index} className="piece" style={{ backgroundColor: piece.color }}/>
     ));
 
@@ -96,7 +91,7 @@ const App = () => {
                 <div className="remaining-pieces">{Pieces}</div>
                 <div>
                     <button disabled={!canPlace} onClick={handlePlacePiece}>ПОСТАВИТЬ ФИГУРУ</button>
-                    <button disabled={!selectedTile && !canMove} onClick={{/*handleMovePiece*/}}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
+                    <button disabled={!selectedTile || !canMove} onClick={handleMovePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
                 </div>
             </div>
         </div>

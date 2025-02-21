@@ -6,7 +6,7 @@ const UP = [0, -1];
 
 const SIDE_SIZE = 12;
 
-export const createInitialPlayerState = (state, action) => {
+export const createInitialPlayerState = (state) => {
     state.dice = [null, null];
     state.canRoll = true;
     state.canMove = false;
@@ -58,32 +58,50 @@ const calculateBoardIndexes = (options) => {
     return indexes;
 }
 
+const createInitialPieces = (color) => {
+    const pieces = [];
+    for (let i = 0; i < 4; i += 1) {
+        pieces.push({
+            color,
+            tile: null,
+        })
+    }
+    return pieces;
+}
+
+const createInitialPlayers = (colors) =>  {
+    const getStartPos = (offset) => 6 + SIDE_SIZE * (offset - 1);
+
+    const players = [];
+    const pieces = {};
+    for (let i = 0; i < colors.length; i += 1) {
+        const color = colors[i];
+        const player = {
+            color,
+            start: getStartPos(i + 1),
+            canGoToHome: false,
+            moves: []
+        }
+        pieces[color] = createInitialPieces(color)
+        players.push(player);
+    }
+    return {players, pieces}
+}
+
 export const createInitialGameState = () => {
     const tiles = Array(SIDE_SIZE * 4)
         .fill(null)
         .map((_, i) => ({
             index: i,
             name: 'freedom',
-            pieces: [],
         }));
 
-    const getStartPos = (offset) => 6 + SIDE_SIZE * (offset - 1);
-
-    const players = [
-        { color: 'red', start: getStartPos(1), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'blue', start: getStartPos(2), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'green', start: getStartPos(3), canGoToHome: false, moves: [], pieces: [] },
-        { color: 'orange', start: getStartPos(4), canGoToHome: false, moves: [], pieces: [] },
-    ];
-
-    players.forEach((player) => {
-        player.pieces = Array(4)
-            .fill(null)
-            .map(() => ({
-                color: player.color,
-                tile: null,
-            }));
-    });
+    const {players, pieces} = createInitialPlayers([
+        'red',
+        'blue',
+        'green',
+        'orange'
+    ])
 
     const innerLayer = calculateBoardIndexes({
         initialMove: DOWN,
@@ -125,8 +143,7 @@ export const createInitialGameState = () => {
     innerLayer.forEach(() => {
         tiles.push({
             index: tiles.length,
-            name: 'jail',
-            pieces: [],
+            name: 'jail'
         })
     })
 
@@ -149,14 +166,13 @@ export const createInitialGameState = () => {
     console.log(`Game created with ${players.length} players and ${tiles.length} tiles`);
     console.log(`Starting position for players`, players.map((player) => player.start));
 
-
-
     const state = {
         currentPlayerIndex: 0,
         tiles,
         players,
         currentPlayer: players[0],
-        tileIndexes
+        tileIndexes,
+        pieces,
     }
 
     createInitialPlayerState(state);
