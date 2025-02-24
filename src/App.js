@@ -103,7 +103,7 @@ const App = () => {
                 </div>
                 {players.map((player)=> {
                     return (
-                            <div className="player" style={{color: player.color}}> игрок: {player.color}
+                            <div className="player" style={{color: player.color}}>{player.color}
                                 <div className="pieces">
                                     {pieces[player.color].map((piece) => {
                                         if (piece.tile !== null) {
