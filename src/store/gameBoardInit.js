@@ -80,7 +80,8 @@ const createInitialPlayers = (colors) =>  {
             color,
             start: getStartPos(i + 1),
             canGoToHome: false,
-            moves: []
+            moves: [],
+            lastDice: [],
         }
         pieces[color] = createInitialPieces(color)
         players.push(player);

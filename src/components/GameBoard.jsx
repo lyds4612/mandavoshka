@@ -1,4 +1,4 @@
-import React, {useEffect, useState} from 'react';
+import React, {useState} from 'react';
 import './GameBoard.css';
 import {useSelector} from "react-redux";
 import {flattened} from "../helpers";
@@ -42,7 +42,10 @@ const GameBoard = ({ board, onTileClick }) => {
 
                         if (cell === '') {
                             classNames.push('empty');
+                        } else if (cell === '⛓️') {
+                            classNames.push('prison');
                         }
+
 
                         const className = classNames.join(' ');
 

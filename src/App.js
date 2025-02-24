@@ -1,4 +1,4 @@
-import React, {Fragment, useState} from 'react';
+import React, {useState} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
 import GameBoard from './components/GameBoard';
@@ -16,9 +16,9 @@ function createInitialBoard() {
         [4,     '',   '',   '',   '',   '',    2,    '',   '',   '',    '',    'II',    4],
         [3,     '',   '',    d,   '',   '',    3,    '',   '',    h,    '',     'I',    3],
         [2,     '',   '',   '',   '',   '',    4,    '',   '',   '',    '',      '',    2],
-        [1,     '',   '',   '',   '',  '|',  '|',   '|',   '',   '',    '',      '',    1],
-        [0,      1,    2,    3,    4,  '-',   '⛓️',   '-',    4,    3,     2,       1,    0],
-        [1,     '',   '',   '',   '',  '|',  '|',   '|',   '',   '',    '',      '',    1],
+        [1,     '',   '',   '',   '',  '',  '',   '',   '',   '',    '',      '',    1],
+        [0,      1,    2,    3,    4,  '',   '⛓️',   '',    4,    3,     2,       1,    0],
+        [1,     '',   '',   '',   '',  '',  '',   '',   '',   '',    '',      '',    1],
         [2,     '',   '',   '',   '',   '',    4,    '',   '',   '',    '',      '',    2],
         [3,    'I',   '',    c,   '',   '',    3,    '',   '',    s,    '',      '',    3],
         [4,   'II',   '',   '',   '',   '',    2,    '',   '',   '',    '',      '',    4],
@@ -32,7 +32,7 @@ const App = () => {
     const dispatch = useDispatch();
     const tileIndexes  = useSelector((state) => state.game.tileIndexes)
     const tiles = useSelector((state) => state.game.tiles);
-    const color = useSelector((state) => state.game.currentPlayer.color);
+    const currentPlayerColor = useSelector((state) => state.game.currentPlayer.color);
     const pieces = useSelector((state) => state.game.pieces);
     const canRoll = useSelector((state) => state.game.canRoll);
     const canMove = useSelector((state) => state.game.canMove);
@@ -68,7 +68,7 @@ const App = () => {
         dispatch(movePiece(selectedTile.index));
     };
 
-    const Pieces = pieces[color].map((piece, index) => (
+    const Pieces = pieces[currentPlayerColor].map((piece, index) => (
         <div key={index} className="piece" style={{ backgroundColor: piece.color }}/>
     ));
 
@@ -86,7 +86,7 @@ const App = () => {
                 <Dice/>
                 <button disabled={!canRoll} onClick={handleRollDice}>БРОСАЙ КУБИК</button>
                 <div>
-                    ТЕКУЩИЙ ИГРОК: <span style={{color}}>{color}</span>
+                    ТЕКУЩИЙ ИГРОК: <span style={{color: currentPlayerColor}}>{currentPlayerColor}</span>
                 </div>
                 <div>Ходов: {moves.length}</div>
                 <div className="remaining-pieces">{Pieces}</div>
@@ -102,18 +102,24 @@ const App = () => {
                     <div className="last-move" style={{paddingTop: '5px'}}>Последний ход:</div>
                 </div>
                 {players.map((player)=> {
+                    const style = {
+                        color: player.color,
+                        borderTopColor: currentPlayerColor === player.color && player.color
+                    }
+
                     return (
-                            <div className="player" style={{color: player.color}}>{player.color}
-                                <div className="pieces">
-                                    {pieces[player.color].map((piece) => {
-                                        if (piece.tile !== null) {
-                                            return null
-                                        }
-                                        return <div className="piece" style={{backgroundColor: player.color}}></div>
-                                    })}
-                                </div>
-                                <div className="last-dice">{player?.lastDice?.join(' : ')}</div>
+                        <div className="player" style={style}>
+                            {player.color}
+                            <div className="pieces">
+                                {pieces[player.color].map((piece) => {
+                                    if (piece.tile !== null) {
+                                        return null
+                                    }
+                                    return <div className="piece" style={{backgroundColor: player.color}}></div>
+                                })}
                             </div>
+                            <div className="last-dice">{player?.lastDice?.join(' : ')}</div>
+                        </div>
                     )
                 })}
             </div>

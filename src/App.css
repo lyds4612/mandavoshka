@@ -11,6 +11,7 @@
     align-items: center;
     flex-wrap: wrap;
     overflow: hidden;
+    gap: 24px;
 }
 
 button {
