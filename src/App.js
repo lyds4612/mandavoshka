@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, {Fragment, useState} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
 import GameBoard from './components/GameBoard';
@@ -38,6 +38,7 @@ const App = () => {
     const canMove = useSelector((state) => state.game.canMove);
     const canPlace = useSelector((state) => state.game.canPlace);
     const moves = useSelector((state) => state.game.moves);
+    const players = useSelector((state) => state.game.players);
 
     const [selectedTile, setSelectedTile] = useState(null);
     const board = createInitialBoard();
@@ -93,6 +94,28 @@ const App = () => {
                     <button disabled={!canPlace} onClick={handlePlacePiece}>ПОСТАВИТЬ ФИГУРУ</button>
                     <button disabled={!selectedTile || !canMove} onClick={handleMovePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
                 </div>
+            </div>
+            <div className='players-on-board'>
+                <div className='player'>
+                    <div className="what-a-player"> Игрок:</div>
+                    <div className="pieces" style={{alignItems: 'center', paddingBottom: '6px'}}>Количество фишек:</div>
+                    <div className="last-move" style={{paddingTop: '5px'}}>Последний ход:</div>
+                </div>
+                {players.map((player)=> {
+                    return (
+                            <div className="player" style={{color: player.color}}> игрок: {player.color}
+                                <div className="pieces">
+                                    {pieces[player.color].map((piece) => {
+                                        if (piece.tile !== null) {
+                                            return null
+                                        }
+                                        return <div className="piece" style={{backgroundColor: player.color}}></div>
+                                    })}
+                                </div>
+                                <div className="last-dice">{player?.lastDice?.join(' : ')}</div>
+                            </div>
+                    )
+                })}
             </div>
         </div>
     );

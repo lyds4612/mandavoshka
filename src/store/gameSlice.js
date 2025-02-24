@@ -49,7 +49,8 @@ const gameSlice = createSlice({
             console.log('Dice:', dice.join(', '));
             state.moves = moves;
             state.dice = dice;
-
+            const player = state.players.find(player => player.color === state.currentPlayer.color)
+            player.lastDice = [...dice]
             recalculatePlayerState(state);
 
             if (!state.canPlace && !state.canMove) {
