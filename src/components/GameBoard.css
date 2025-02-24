@@ -64,6 +64,10 @@
     transform: scale(3.2);
 }
 
+.cell.prison:hover {
+    transform: scale(3.1);
+}
+
 .piece {
     width: 30px;
     height: 30px;

@@ -7,9 +7,12 @@ const Dice = () => {
     const moves = useSelector((state) => state.game.moves);
 
     const bestMove = moves[0];
-    const  dies = dice.map((die, idx) => {
+    const bestMoveIndex = dice.indexOf(bestMove);
+
+    const dies = dice.map((die, idx) => {
         const classNames = ['die'];
-        if (die === bestMove) {
+
+        if (bestMoveIndex === idx) {
             classNames.push('current');
         }
         const className = classNames.join(' ')
