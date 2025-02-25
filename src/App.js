@@ -101,24 +101,24 @@ const App = () => {
                     <div className="pieces" style={{alignItems: 'center', paddingBottom: '6px'}}>Количество фишек:</div>
                     <div className="last-move" style={{paddingTop: '5px'}}>Последний ход:</div>
                 </div>
-                {players.map((player)=> {
+                {players.map(({color, lastDice})=> {
                     const style = {
-                        color: player.color,
-                        borderTopColor: currentPlayerColor === player.color && player.color
+                        color,
+                        borderTopColor: currentPlayerColor === color && color
                     }
 
                     return (
-                        <div className="player" style={style}>
-                            {player.color}
+                        <div key={color} className="player" style={style}>
+                            {color}
                             <div className="pieces">
-                                {pieces[player.color].map((piece) => {
+                                {pieces[color].map((piece, i) => {
                                     if (piece.tile !== null) {
                                         return null
                                     }
-                                    return <div className="piece" style={{backgroundColor: player.color}}></div>
+                                    return <div className="piece" key={color + i} style={{backgroundColor: color}}></div>
                                 })}
                             </div>
-                            <div className="last-dice">{player?.lastDice?.join(' : ')}</div>
+                            <div className="last-dice">{lastDice?.join(' : ')}</div>
                         </div>
                     )
                 })}

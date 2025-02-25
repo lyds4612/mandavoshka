@@ -74,11 +74,20 @@ const gameSlice = createSlice({
         },
         movePiece(state, { payload: tileIndex }) {
             const player = state.currentPlayer;
-            console.log(tileIndex);
             const piece = state.pieces[player.color].find((piece) => piece.tile === tileIndex);
-            console.log(piece);
             if (piece) {
-                piece.tile = piece.tile + state.moves[0];
+                let index = piece.tile + state.moves[0];
+                if (state.tiles[index].name === 'jail') {
+                    while(state.tiles[index].name === 'jail') {
+                        index--;
+                    }
+                    const diff = index - piece.tile;
+                    piece.tile = state.moves[0] - diff - 1;
+                } else {
+                    piece.tile = index;
+                }
+
+
             } else {
                 console.error(`Piece of ${state.currentPlayer.color} not found on ${tileIndex}`)
                 return;
