@@ -20,6 +20,7 @@ const GameBoard = ({ board, onTileClick }) => {
                     {row.map((cell, cellIndex) => {
                         const style = {};
                         const tileIndex = tileIndexes.pos[`${rowIndex}, ${cellIndex}`];
+                        const classNames = ['cell', `col-${cellIndex}`]
 
                         if (startPositions.includes(tileIndex)) {
                             style.backgroundColor = 'rgba(37,175,56,0.4)'
@@ -29,8 +30,11 @@ const GameBoard = ({ board, onTileClick }) => {
                         if (tile && tile.name === 'jail') {
                             style.backgroundColor = 'red'
                         }
+                        if (tile && tile.name === 'prison') {
+                            classNames.push('prison')
+                            style.backgroundColor = 'black'
+                        }
 
-                        const classNames = ['cell', `col-${cellIndex}`]
                         if(selectedCell && selectedCell[0] === rowIndex && selectedCell[1] === cellIndex) {
                             classNames.push('selected')
                         }
@@ -42,8 +46,6 @@ const GameBoard = ({ board, onTileClick }) => {
 
                         if (cell === '') {
                             classNames.push('empty');
-                        } else if (cell === '⛓️') {
-                            classNames.push('prison');
                         }
 
 

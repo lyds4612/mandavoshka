@@ -148,12 +148,19 @@ export const createInitialGameState = () => {
         })
     })
 
+    tiles.push({
+        index: tiles.length,
+        name: 'prison'
+    })
+
     const indexes = [
         ...outerLayer,
         ...innerLayer,
     ]
 
-    const reversed = {}
+    const reversed = {
+        '6, 6' : tiles.length -1,
+    }
 
     indexes.forEach(([x, y], index) => {
         reversed[`${x}, ${y}`] = index;

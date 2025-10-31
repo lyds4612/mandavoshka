@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import yarnReact, {useState} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
 import GameBoard from './components/GameBoard';
