@@ -9,6 +9,13 @@ const createInitialPlayerState = (state, action) => {
     state.moves = []
 }
 
+const TILE_TYPES = {
+    'jail': 'jail',
+    'prison': 'prison',
+    'start': 'start',
+    'detention-center-entrance': 'detention-center-entrance',
+}
+
 const initialState = createInitialGameState();
 
 const changePlayer = (state) => {
@@ -77,15 +84,18 @@ const gameSlice = createSlice({
             const player = state.currentPlayer;
             const piece = state.pieces[player.color].find((piece) => piece.tile === tileIndex);
             if (piece) {
+                if (TILE_TYPES['detention-center-entrance'] === state.tiles[tileIndex].name) {
+                    piece.tile = state.tiles[tileIndex].tiles[0];
+                } 
                 let index = piece.tile + state.moves[0];
-                if (state.tiles[index].name === 'jail') {
-                    while(state.tiles[index].name === 'jail') {
+                if (state.tiles[index].name === TILE_TYPES.jail) {
+                    while(state.tiles[index].name === TILE_TYPES.jail) {
                         index--;
                     }
-                    const diff = index - piece.tile;
-                    piece.tile = state.moves[0] - diff - 1;
+                    const diff = index - piece.tile - 1;
+                    piece.tile = state.moves[0] - diff;
                 } else {
-                    const prisonTile = state.tiles.find(tile => tile.name === 'prison')
+                    const prisonTile = state.tiles.find(tile => tile.name === TILE_TYPES.prison)
                     Object.entries(state.pieces).forEach(([pieceColor, value]) => {
                         if (player.color === pieceColor) return;
                         for (let i = 0; i < value.length; i++) {

@@ -1,4 +1,4 @@
-import React, {useState} from 'react';
+import React, {useEffect, useState} from 'react';
 import './GameBoard.css';
 import {useSelector} from "react-redux";
 import {flattened} from "../helpers";
@@ -7,11 +7,16 @@ const GameBoard = ({ board, onTileClick }) => {
     const [selectedCell, setSelectedCell] = useState([]);
     const tileIndexes  = useSelector((state) => state.game.tileIndexes)
     const players = useSelector((state) => state.game.players);
+    const dice = useSelector((state) => state.game.dice);
     const pieces = useSelector((state) => state.game.pieces);
     const tiles = useSelector((state) => state.game.tiles);
     const startPositions = players.map((player) => {
         return player.start;
     })
+
+    useEffect(() => {
+        setSelectedCell([]);
+    }, [dice])
 
     return (
         <div id="game-board">

@@ -1,4 +1,10 @@
 
+const consoleWrapper = (text) => {
+    console.log(`%c[MDEV] %c${text}`, "color: orange", "color: initial")
+}
+
+const debugLog = consoleWrapper;
+
 const RIGHT = [1, 0];
 const LEFT = [-1, 0];
 const DOWN = [0, 1];
@@ -153,13 +159,44 @@ export const createInitialGameState = () => {
         name: 'prison'
     })
 
+    const detentionCenters = {
+        9: {
+            tiles: [59, 58, 57]
+        },
+        21: {
+            tiles: [56, 55, 54]
+        },
+        33: {
+            tiles: [53, 52, 51]
+        },
+        45: {
+            tiles: [50, 49, 48]
+        }   
+    }
+    Object.entries(detentionCenters).forEach(([tileEnterIndex, data]) => {
+        tiles[tileEnterIndex].name = 'detention-center-entrance';
+        
+        data.tiles.forEach((tileIndex, index) => {
+            if (index === 0) {
+                tiles[tileIndex].name = `detention-center-${index}`;
+            } else if (index === 2) {
+                tiles[tileIndex].name = 'detention-center-exit';
+                tiles[tileEnterIndex].moveTo = tileEnterIndex + 2;
+            } else {
+                tiles[tileIndex].name = 'detention-center';
+            }
+        })
+    })
+
+
+
     const indexes = [
         ...outerLayer,
         ...innerLayer,
     ]
 
     const reversed = {
-        '6, 6' : tiles.length -1,
+        '6, 6' : tiles.length - 1
     }
 
     indexes.forEach(([x, y], index) => {
@@ -171,9 +208,11 @@ export const createInitialGameState = () => {
         pos: reversed,
     }
 
-    console.log(`Game created with ${players.length} players and ${tiles.length} tiles`);
-    console.log(`Starting position for players`, players.map((player) => player.start));
 
+    debugLog(`Game created with ${players.length} players and ${tiles.length} tiles`);
+    debugLog(`Starting position for players [${players.map((player) => player.start).join(', ')}]`);
+    debugLog(`Detention center entrances: [${JSON.stringify(detentionCenters)}]`);
+    
     const state = {
         currentPlayerIndex: 0,
         tiles,

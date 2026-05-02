@@ -97,7 +97,7 @@ const App = () => {
             </div>
             <div className='players-on-board'>
                 <div className='player'>
-                    <div className="what-a-player"> Игрок:</div>
+                    <div className="what-a-player">Игрок:</div>
                     <div className="pieces" style={{alignItems: 'center', paddingBottom: '6px'}}>Количество фишек:</div>
                     <div className="last-move" style={{paddingTop: '5px'}}>Последний ход:</div>
                 </div>
@@ -113,10 +113,10 @@ const App = () => {
                             <div className="pieces">
                                 {pieces[color].map((piece, i) => {
                                     if (piece.tile !== null) {
-                                        return null
+                                        return <div className="piece" key={color + i} style={{border: `solid, ${piece.color} 1px`}}></div>
                                     }
                                     return <div className="piece" key={color + i} style={{backgroundColor: color}}></div>
-                                })}
+                                }).reverse()}
                             </div>
                             <div className="last-dice">{lastDice?.join(' : ')}</div>
                         </div>
