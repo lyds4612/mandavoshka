@@ -48,6 +48,24 @@ button:disabled {
     max-width: 560px;
 }
 
+.roll-animation-action {
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.current-player .skip-animation {
+    margin: 0;
+    padding: 4px 10px;
+    border-radius: 4px;
+    color: #68717c;
+    background: transparent;
+    box-shadow: none;
+    font-size: 12px;
+    text-decoration: underline;
+}
+
 .remaining-pieces {
     display: flex;
     flex-wrap: wrap;

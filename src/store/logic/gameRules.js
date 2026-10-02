@@ -110,7 +110,7 @@ export const canPieceMove = (state, piece, player) =>
     getRequiredMoveForPiece(state, piece, player) !== null;
 
 export const calculateActionFlags = (state) => {
-    if (state.winner) {
+    if (state.winner || state.isRolling) {
         return { canMove: false, canPlace: false };
     }
 

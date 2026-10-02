@@ -1,6 +1,7 @@
 import React from 'react';
 import './GameBoard.css';
 import AlleyArrows from './AlleyArrows';
+import Dice from './Dice';
 import {useSelector} from "react-redux";
 import {flattened} from "../helpers";
 import { selectPieces, selectPlayers, selectTileIndexes, selectTiles } from '../store/selectors/gameSelectors';
@@ -95,6 +96,7 @@ const GameBoard = ({ board, onTileClick, selectedTileIndex, movableTileIndexes }
                 tileIndexes={tileIndexes}
                 gridInset={CELL_SIZE / (2 * (CELL_SIZE + CELL_GAP))}
             />
+            <Dice />
             {board.map((row, rowIndex) => (
                 <div key={rowIndex} className={`row row-${rowIndex}`}>
                     {row.map((cell, cellIndex) => {

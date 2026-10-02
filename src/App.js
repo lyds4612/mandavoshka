@@ -2,13 +2,14 @@ import {useState} from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
 import GameBoard from './components/GameBoard';
-import Dice from './components/Dice';
-import {movePiece, placePiece, resetGame, rollDice} from "./store/gameSlice";
+import { DiceResult } from './components/Dice';
+import {finishDiceRoll, movePiece, placePiece, resetGame, rollDice} from "./store/gameSlice";
 import {
     selectActionFlags,
     selectCurrentPlayerColor,
     selectCurrentPlayerPieces,
     selectGameState,
+    selectIsRolling,
     selectMovableTileIndexes,
     selectMoves,
     selectPieces,
@@ -78,11 +79,18 @@ const CurrentPlayerPanel = ({
     currentPlayerPieces,
     turnMessage,
     winner,
+    isRolling,
+    onSkipAnimation,
 }) => {
     return (
         <div className="current-player">
-            <Dice/>
-            <button disabled={!canRoll || Boolean(winner)} onClick={onRollDice}>БРОСИТЬ КУБИКИ</button>
+            <DiceResult />
+            <button disabled={!canRoll || Boolean(winner)} aria-busy={isRolling} onClick={onRollDice}>
+                {isRolling ? 'КУБИКИ ЛЕТЯТ…' : 'БРОСИТЬ КУБИКИ'}
+            </button>
+            <div className="roll-animation-action">
+                {isRolling && <button className="skip-animation" onClick={onSkipAnimation}>Пропустить анимацию</button>}
+            </div>
             <div>
                 ТЕКУЩИЙ ИГРОК: <span style={{color: currentPlayerColor}}>{currentPlayerColor}</span>
             </div>
@@ -148,6 +156,7 @@ const App = () => {
     const movableTileIndexes = useSelector(selectMovableTileIndexes);
     const turnMessage = useSelector(selectTurnMessage);
     const winner = useSelector(selectWinner);
+    const isRolling = useSelector(selectIsRolling);
     const { canRoll, canMove, canPlace } = useSelector(selectActionFlags);
 
     const [selectedTileIndex, setSelectedTileIndex] = useState(null);
@@ -212,6 +221,8 @@ const App = () => {
                 currentPlayerPieces={currentPlayerPieces}
                 turnMessage={turnMessage}
                 winner={winner}
+                isRolling={isRolling}
+                onSkipAnimation={() => dispatch(finishDiceRoll(game.diceRoll?.id))}
             />
 
             <PlayersOnBoard

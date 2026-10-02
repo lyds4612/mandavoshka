@@ -16,6 +16,7 @@
     "recharts": "^2.8.0",
     "redux": "^4.2.1",
     "redux-thunk": "^2.4.2",
+    "three": "0.186.1",
     "web-vitals": "^2.1.4"
   },
   "scripts": {

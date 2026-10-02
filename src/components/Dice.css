@@ -1,25 +1,111 @@
-.controls {
-    text-align: center;
+.dice-stage,
+.dice-canvas {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
 }
 
-.dice {
-    display: flex;
-    justify-content: center;
-    gap: 30px;
-}
+.dice-stage { z-index: 5; }
+.dice-canvas canvas { display: block; width: 100%; height: 100%; }
+.dice-stage[data-dice-renderer="css-3d"] .dice-canvas { display: none; }
 
-.die {
-    background-color: white;
-    width: 80px;
-    height: 80px;
-    border: 1px solid #000;
+.dice-result {
     display: flex;
     justify-content: center;
     align-items: center;
-    font-size: 3em;
-    transition: transform 0.05s linear;
+    gap: 10px;
+    min-height: 38px;
 }
 
-.die.current {
-    transform: scale(1.3);
+.dice-result-label { color: #646a70; font-size: 14px; }
+.dice-value {
+    padding: 5px 11px;
+    border-radius: 8px;
+    font-size: 20px;
+    font-weight: 700;
+    background: #fff9eb;
+    color: #263241;
+    transition: color 150ms ease, background-color 150ms ease;
+}
+
+.dice-value.is-current { background: #ffdfa3; box-shadow: inset 0 0 0 2px #c99134; }
+.dice-value.is-used { background: #e7e8e9; color: #7c8389; font-size: 16px; }
+.dice-flight-status { color: #856123; font-weight: 700; }
+
+.fallback-dice { position: absolute; inset: 0; perspective: 900px; }
+.fallback-die {
+    position: absolute;
+    left: calc(38% + var(--die-index) * 24%);
+    top: calc(31% - var(--die-index) * 2%);
+    width: 52px;
+    height: 52px;
+    margin: -26px;
+    transform-style: preserve-3d;
+    transition: opacity 180ms ease;
+}
+
+.fallback-die.is-used { opacity: 0.45; }
+.fallback-die-shadow {
+    position: absolute;
+    inset: 6px -9px -10px;
+    background: rgba(43, 31, 13, 0.24);
+    border-radius: 50%;
+    filter: blur(7px);
+}
+
+.fallback-die-flight,
+.fallback-die-camera,
+.fallback-die-cube { width: 100%; height: 100%; transform-style: preserve-3d; }
+.fallback-die-camera { transform: rotateX(-58deg) rotateY(18deg) rotateZ(-8deg); }
+.fallback-die-cube { transform: rotateX(var(--result-x)) rotateZ(var(--result-z)); }
+.fallback-die-face {
+    position: absolute;
+    inset: 0;
+    border-radius: 7px;
+    border: 1px solid #b8ad92;
+    background: linear-gradient(135deg, #fffdf5, #ecdfc3);
+    box-shadow: inset 0 0 7px rgba(100, 73, 28, 0.12);
+    backface-visibility: hidden;
+}
+
+.fallback-die.is-current .fallback-die-face { border-color: #ac7928; }
+.face-front { transform: translateZ(26px); }
+.face-back { transform: rotateY(180deg) translateZ(26px); }
+.face-right { transform: rotateY(90deg) translateZ(26px); }
+.face-left { transform: rotateY(-90deg) translateZ(26px); }
+.face-top { transform: rotateX(90deg) translateZ(26px); }
+.face-bottom { transform: rotateX(-90deg) translateZ(26px); }
+.fallback-pip {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin: -4px;
+    border-radius: 50%;
+    background: #1b2731;
+    box-shadow: inset 0 1px 2px #000;
+}
+
+.fallback-dice.is-rolling .fallback-die-flight { animation: dice-flight var(--roll-duration) both; }
+.fallback-dice.is-rolling .fallback-die-cube { animation: dice-spin var(--roll-duration) both; }
+
+@keyframes dice-flight {
+    0% { transform: translate3d(180px, -250px, 120px); animation-timing-function: ease-in; }
+    34% { transform: translate3d(45px, 0, 0); animation-timing-function: ease-out; }
+    48% { transform: translate3d(24px, -70px, 35px); animation-timing-function: ease-in; }
+    62% { transform: translate3d(12px, 0, 0); animation-timing-function: ease-out; }
+    72% { transform: translate3d(6px, -18px, 10px); animation-timing-function: ease-in; }
+    82% { transform: translate3d(3px, 0, 0); }
+    100% { transform: translate3d(0, 0, 0); }
+}
+
+@keyframes dice-spin {
+    0% { transform: rotateX(calc(var(--result-x) + 700deg)) rotateY(500deg) rotateZ(var(--result-z)); }
+    62% { transform: rotateX(calc(var(--result-x) + 120deg)) rotateY(90deg) rotateZ(var(--result-z)); }
+    82% { transform: rotateX(calc(var(--result-x) - 12deg)) rotateY(-9deg) rotateZ(var(--result-z)); }
+    100% { transform: rotateX(var(--result-x)) rotateY(0deg) rotateZ(var(--result-z)); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .fallback-dice.is-rolling .fallback-die-flight,
+    .fallback-dice.is-rolling .fallback-die-cube { animation: none; }
 }

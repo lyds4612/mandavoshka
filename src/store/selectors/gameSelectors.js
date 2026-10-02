@@ -7,6 +7,8 @@ export const selectTiles = (state) => state.game.tiles;
 export const selectPlayers = (state) => state.game.players;
 export const selectPieces = (state) => state.game.pieces;
 export const selectDice = (state) => state.game.dice;
+export const selectDiceRoll = (state) => state.game.diceRoll;
+export const selectIsRolling = (state) => state.game.isRolling;
 export const selectMoves = (state) => state.game.moves;
 export const selectCurrentPlayer = (state) => state.game.players[state.game.currentPlayerIndex];
 export const selectWinner = (state) => state.game.winner;

@@ -1,4 +1,4 @@
-import { createSlice } from '@reduxjs/toolkit';
+import { createSlice, nanoid } from '@reduxjs/toolkit';
 
 import { createInitialGameState, OUTER_LAYER_TILES_COUNT } from './gameBoardInit';
 import {
@@ -98,20 +98,37 @@ const gameSlice = createSlice({
     name: 'game',
     initialState,
     reducers: {
-        rollDice(state) {
-            if (!state.canRoll || state.winner) {
+        rollDice: {
+            prepare: () => ({ payload: { id: nanoid(), values: rollPairDice() } }),
+            reducer(state, { payload }) {
+                if (!state.canRoll || state.isRolling || state.winner) {
+                    return;
+                }
+
+                state.rollCount += 1;
+                state.diceRoll = { ...payload, playerColor: currentPlayer(state).color, sequence: state.rollCount };
+                state.isRolling = true;
+                state.dice = [null, null];
+                state.moves = [];
+                state.canRoll = false;
+                state.canMove = false;
+                state.canPlace = false;
+                state.turnMessage = 'Кубики летят на доску…';
+            },
+        },
+
+        finishDiceRoll(state, { payload: rollId }) {
+            if (!state.isRolling || state.diceRoll?.id !== rollId || state.winner) {
                 return;
             }
 
-            const dice = rollPairDice();
-            state.dice = dice;
+            const dice = state.diceRoll.values;
+            state.isRolling = false;
+            state.dice = [...dice];
             state.moves = createMoveQueue(dice);
             state.bonusRollPending = dice[0] === dice[1];
-            state.canRoll = false;
             state.turnMessage = `Выпало ${dice[0]} и ${dice[1]}.`;
-
-            const player = currentPlayer(state);
-            player.lastDice = [...dice];
+            currentPlayer(state).lastDice = [...dice];
             settleTurnState(state);
         },
 
@@ -170,5 +187,5 @@ const gameSlice = createSlice({
     },
 });
 
-export const { rollDice, placePiece, movePiece, resetGame } = gameSlice.actions;
+export const { rollDice, finishDiceRoll, placePiece, movePiece, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;

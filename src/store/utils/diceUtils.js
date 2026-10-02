@@ -1,4 +1,4 @@
-export const roll = () => Math.ceil(Math.random() * 6);
+export const roll = () => Math.floor(Math.random() * 6) + 1;
 
 export const rollDice = () => [roll(), roll()];
 
