@@ -81,7 +81,8 @@ export const usePieceMotion = ({ game, tableRef, releaseOrigins, scope }) => {
             const reset = game.rollCount < before.rollCount || (game.canRoll && game.rollCount === 0);
             const mover = changes.find(change => change.color === before.players[before.currentPlayerIndex].color);
             const moverPreview = mover && getPieceMovePreview(before, mover.old, before.players[before.currentPlayerIndex]);
-            const impactDelay = mover?.old.tile === null ? 320 : releaseOrigins.current.has(mover?.id) ? 100
+            const moverWasDragged = releaseOrigins.current.has(mover?.id);
+            const impactDelay = mover?.old.tile === null ? 320 : moverWasDragged ? 100
                 : Math.min(720, 180 + Math.max(0, (moverPreview?.path.length ?? 1) - 1) * 70);
             changes.forEach(({ id, piece, old, color }) => {
                 const release = releaseOrigins.current.get(id);
@@ -98,7 +99,10 @@ export const usePieceMotion = ({ game, tableRef, releaseOrigins, scope }) => {
                     return rect ? { ...rect, size: to?.size ?? from?.size } : null;
                 }).filter(Boolean) : [];
                 if (kind === 'place' || kind === 'reset') path.push({ x: (from?.x + to?.x) / 2, y: (from?.y + to?.y) / 2, size: to?.size });
-                animate(id, from, to, kind, path, captured ? impactDelay : 0);
+                const captureStep = moverPreview?.path.indexOf(old.tile) ?? -1;
+                const captureDelay = !moverWasDragged && captureStep >= 0
+                    ? impactDelay * (captureStep + 1) / moverPreview.path.length : impactDelay;
+                animate(id, from, to, kind, path, captured ? captureDelay : 0);
             });
         } else if (previousScope.current !== scope) { stopAll(); releaseOrigins.current.clear(); }
         previous.current = game;

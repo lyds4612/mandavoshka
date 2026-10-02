@@ -10,6 +10,7 @@
 
 # production
 /build
+/public/characters/
 
 # misc
 .DS_Store

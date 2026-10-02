@@ -64,7 +64,10 @@ const App = () => {
     const paused = Boolean(connectionPause);
     const showRoomPanel = roomPanelOpen || (!paused && Boolean(network.error))
         || network.recoveryStatus !== 'ready' || (gamePhase !== 'playing' && Boolean(network.room?.paused));
-    useEffect(() => { setRoomPanelOpen(false); setBoardZoomed(false); }, [network.mode, network.room?.phase]);
+    useEffect(() => {
+        setRoomPanelOpen(false); setBoardZoomed(false);
+        if (network.mode === 'online') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
+    }, [network.mode, network.room?.phase]);
     useEffect(() => { setBoardZoomed(false); }, [currentPlayerColor, isRolling]);
     useEffect(() => { if (paused) setBoardZoomed(false); }, [paused]);
     useEffect(() => {
@@ -120,7 +123,7 @@ const App = () => {
             <MultiplayerPanel expanded={roomPanelOpen} />
             {showTable && <main className="game-table" aria-label="Партия Мандавошки" data-player-count={network.mode === 'online' ? players.length : undefined} ref={tableRef} {...interaction.pointerHandlers}>
                 <MobilePlayers players={players} pieces={pieces} currentPlayerColor={currentPlayerColor} participants={participants}
-                    phase={gamePhase} zoomed={boardZoomed} onZoom={() => setBoardZoomed(zoomed => !zoomed)} zoomDisabled={isRolling || Boolean(interaction.drag) || paused} />
+                    phase={gamePhase} zoomed={boardZoomed} onZoom={() => setBoardZoomed(zoomed => !zoomed)} zoomDisabled={isRolling || Boolean(interaction.drag) || paused} interaction={interaction} />
                 {players.map((player) => {
                     const member = participants?.find(participant => participant.color === player.color);
                     return (
@@ -129,7 +132,7 @@ const App = () => {
                             prisonTileIndex={game.prisonTileIndex} winner={winner} interaction={interaction}
                             isMyTurn={isMyTurn} isRolling={isRolling} canRoll={canRoll} phase={gamePhase}
                             mobileFocus={player.color === mobileFocusColor} boardZoomed={boardZoomed}
-                            displayName={member?.name} connected={member?.connected ?? true} isMe={member?.id === network.playerId} />
+                            displayName={member?.name} characterId={member?.characterId} connected={member?.connected ?? true} isMe={member?.id === network.playerId} />
                     );
                 })}
                 <BoardViewport zoomed={boardZoomed} onZoomChange={setBoardZoomed} onLayoutChange={motion.refreshPositions}

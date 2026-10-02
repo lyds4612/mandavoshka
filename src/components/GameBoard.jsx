@@ -27,7 +27,7 @@ const tileDescription = (tile, label, startingPlayer) => {
 const TilePieces = ({ pieces, interaction }) => (
     <span className="tile-pieces" data-piece-count={pieces.length}>
         {pieces.map((piece) => (
-            <span key={piece.id} className={`piece ${interaction.available[piece.id] ? 'is-draggable' : ''} ${interaction.drag?.id === piece.id ? 'is-drag-source' : ''}`}
+            <span key={piece.id} className={`piece ${interaction.available[piece.id] ? 'is-draggable' : ''} ${interaction.selectedId === piece.id ? 'is-selected' : ''} ${interaction.drag?.id === piece.id ? 'is-drag-source' : ''}`}
                 data-piece-id={piece.id} data-piece-color={piece.color} data-piece-progress={piece.progress ?? ''} style={playerStyle(piece.color)} />
         ))}
     </span>

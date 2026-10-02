@@ -85,6 +85,9 @@ const moveOrdinaryPiece = (state, player, piece, moveValue) => {
     }
 
     consumeMoveValue(state, moveValue);
+    if (Number.isInteger(destination.alleyEntry)) {
+        captureOpponentsAt(state, player, destination.alleyEntry);
+    }
     piece.tile = destination.tile;
     piece.progress = destination.progress;
     captureOpponentsAt(state, player, destination.tile);

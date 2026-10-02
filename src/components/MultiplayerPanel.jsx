@@ -5,12 +5,16 @@ import { PLAYER_COLORS } from '../store/gameBoardInit.js';
 import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../shared/multiplayerConfig.js';
 import { getInvitationCode } from '../multiplayer/invitation.js';
 import { PLAYER_THEMES } from './gamePresentation';
+import { getCharacter } from '../shared/characters';
+import CharacterPicker from './CharacterPicker';
+import CharacterPortrait from './CharacterPortrait';
 import './MultiplayerPanel.css';
 
 const MultiplayerPanel = ({ expanded = false }) => {
     const dispatch = useDispatch();
     const network = useSelector(selectMultiplayer);
     const [name, setName] = useState('');
+    const [characterId, setCharacterId] = useState('');
     const [inviteCode] = useState(getInvitationCode);
     const [code, setCode] = useState('');
     const invited = Boolean(inviteCode);
@@ -66,12 +70,13 @@ const MultiplayerPanel = ({ expanded = false }) => {
                 <div className="online-invitation">
                     <span className="online-invitation-suit" aria-hidden="true">♣</span>
                     <div className="online-invitation-copy"><span className="eyebrow">Приглашение в комнату {inviteCode}</span>
-                        <h2>Ваше место за столом</h2><p>Введите ник — и сразу попадёте к друзьям.</p></div>
+                        <h2>Ваше место за столом</h2><p>Выберите персонажа и введите ник — и сразу попадёте к друзьям.</p></div>
                     <form className="online-form online-invite-form" onSubmit={event => {
-                        event.preventDefault(); dispatch({ type: 'online/join', payload: { code: inviteCode, name } });
+                        event.preventDefault(); dispatch({ type: 'online/join', payload: { code: inviteCode, name, characterId } });
                     }}>
+                        <CharacterPicker value={characterId} onChange={setCharacterId} disabled={network.pending} />
                         {nicknameField}
-                        <button type="submit" className="button button-primary join-room" disabled={!name.trim() || !validInvite || network.pending}>
+                        <button type="submit" className="button button-primary join-room" disabled={!name.trim() || !characterId || !validInvite || network.pending}>
                             {network.pending ? 'Входим…' : 'Войти в комнату'} <span aria-hidden="true">→</span>
                         </button>
                     </form>
@@ -80,11 +85,12 @@ const MultiplayerPanel = ({ expanded = false }) => {
             ) : !online ? (
                 <details className="online-setup" open={expanded || code.length > 0 || Boolean(network.error)}>
                     <summary><span aria-hidden="true">♧</span> Играть онлайн <span className="online-caption">От 2 до 4 игроков</span></summary>
-                    <form className="online-form" onSubmit={event => { event.preventDefault(); dispatch({ type: 'online/join', payload: { code, name } }); }}>
+                    <form className="online-form" onSubmit={event => { event.preventDefault(); dispatch({ type: 'online/join', payload: { code, name, characterId } }); }}>
+                        <CharacterPicker value={characterId} onChange={setCharacterId} disabled={network.pending} />
                         {nicknameField}
-                        <button type="button" className="button button-secondary create-room" disabled={!name.trim() || network.pending} onClick={() => dispatch({ type: 'online/create', payload: { name } })}>{network.pending ? 'Подключаем…' : 'Создать комнату'}</button>
+                        <button type="button" className="button button-secondary create-room" disabled={!name.trim() || !characterId || network.pending} onClick={() => dispatch({ type: 'online/create', payload: { name, characterId } })}>{network.pending ? 'Подключаем…' : 'Создать комнату'}</button>
                         <label>Код комнаты<input className="online-code" autoComplete="off" maxLength={6} value={code} onChange={event => setCode(event.target.value.toUpperCase().replace(/[^A-Z2-9]/g, ''))} placeholder="ABC123" disabled={network.pending} /></label>
-                        <button type="submit" className="button button-secondary join-room" disabled={!name.trim() || code.length !== 6 || network.pending}>Войти по коду</button>
+                        <button type="submit" className="button button-secondary join-room" disabled={!name.trim() || !characterId || code.length !== 6 || network.pending}>Войти по коду</button>
                     </form>
                 </details>
             ) : (
@@ -100,9 +106,13 @@ const MultiplayerPanel = ({ expanded = false }) => {
                         <ul className="online-players" data-seat-count={seatColors.length} style={{ '--online-seat-count': seatColors.length }}>
                             {seatColors.map(color => {
                                 const player = room.players.find(member => member.color === color);
-                                return <li key={color} className={`${player?.id === network.playerId ? 'is-me' : ''} ${!player ? 'is-empty' : !isConnected(player) ? 'is-disconnected' : ''}`}><span className="online-player-suit" style={{ color: PLAYER_THEMES[color].light }} aria-hidden="true">{PLAYER_THEMES[color].suit}</span>
-                                    <span>{player?.name ?? 'Свободное место'}{player?.id === room.hostId ? ' · хозяин' : ''}</span>
+                                const character = getCharacter(player?.characterId);
+                                return <li key={color} data-character-id={character?.id} className={`${player?.id === network.playerId ? 'is-me' : ''} ${!player ? 'is-empty' : !isConnected(player) ? 'is-disconnected' : ''}`}>
+                                    {character && <CharacterPortrait character={character} className="online-player-portrait" />}
+                                    <div className="online-player-copy"><span className="online-player-name"><span className="online-player-suit" style={{ color: PLAYER_THEMES[color].light }} aria-hidden="true">{PLAYER_THEMES[color].suit}</span> {player?.name ?? 'Свободное место'}{player?.id === room.hostId ? ' · хозяин' : ''}</span>
+                                    {character && <span className="online-player-character" title={character.name}>{character.title}</span>}
                                     <span className="online-seat-status">{player ? isConnected(player) ? 'в сети' : 'отключился · место сохранено' : connectedCount < MIN_ROOM_PLAYERS ? 'пригласите друга' : 'можно пригласить ещё'}</span>
+                                    </div>
                                 </li>;
                             })}
                         </ul>

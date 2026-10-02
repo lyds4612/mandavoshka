@@ -29,6 +29,9 @@
 .online-players li.is-me { border-color: #c3a36a; background: #c3a36a13; }
 .online-players li.is-empty { border-style: dashed; opacity: .65; }
 .online-player-suit { font: 20px/1 Georgia, serif; }
+.online-player-portrait { flex: 0 0 44px; width: 44px; height: 56px; border-radius: 4px; background: #0003; }
+.online-player-copy { flex: 1; min-width: 0; display: grid; gap: 4px; }
+.online-player-character { color: #dbc18e; font-size: 12px; }
 .online-seat-status { flex-basis: 100%; color: var(--muted); font-size: 12px; }
 .online-room-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
 .online-room-actions .online-invite { flex: 1; min-width: 160px; }

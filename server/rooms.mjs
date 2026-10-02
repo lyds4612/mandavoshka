@@ -5,6 +5,7 @@ import { canPieceMove } from '../src/store/logic/gameRules.js';
 import { createInviteOriginResolver } from './inviteOrigin.mjs';
 import { DICE_ROLL_DURATION, REPEAT_ROLL_DURATION } from '../src/shared/animationTiming.js';
 import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../src/shared/multiplayerConfig.js';
+import { getCharacter } from '../src/shared/characters.js';
 
 const fail = (code, message) => { throw Object.assign(new Error(message), { code }); };
 const hashToken = token => createHash('sha256').update(token).digest('hex');
@@ -15,6 +16,10 @@ const normalizeName = value => {
     const name = value.trim().replace(/[\u0000-\u001f\u007f]/g, '');
     if (!name || name.length > 24) fail('BAD_NAME', 'Имя должно содержать от 1 до 24 символов.');
     return name;
+};
+const validateCharacter = id => {
+    if (typeof id !== 'string' || !getCharacter(id)) fail('BAD_CHARACTER', 'Выберите одного персонажа перед входом в комнату.');
+    return id;
 };
 
 export const registerRooms = (io, {
@@ -36,7 +41,7 @@ export const registerRooms = (io, {
     const snapshot = room => ({
         code: room.code, revision: room.revision, phase: room.phase, hostId: room.hostId,
         paused: room.phase === 'playing' && room.players.some(player => !player.socketId),
-        players: room.players.map(({ id, name, color, socketId, disconnectedAt }) => ({ id, name, color, connected: Boolean(socketId), disconnectedAt: disconnectedAt ?? null })),
+        players: room.players.map(({ id, name, characterId, color, socketId, disconnectedAt }) => ({ id, name, characterId, color, connected: Boolean(socketId), disconnectedAt: disconnectedAt ?? null })),
         notice: room.notice ?? null,
         game: room.game,
     });
@@ -80,10 +85,10 @@ export const registerRooms = (io, {
         if (returning) setNotice(room, player, 'reconnected');
         transferHost(room); publish(room);
     };
-    const addPlayer = (socket, room, name) => {
+    const addPlayer = (socket, room, name, characterId) => {
         const token = randomBytes(32).toString('base64url');
         const player = {
-            id: randomUUID(), name, tokenHash: hashToken(token), socketId: null,
+            id: randomUUID(), name, characterId, tokenHash: hashToken(token), socketId: null,
             color: PLAYER_COLORS.find(color => !room.players.some(member => member.color === color)),
         };
         room.players.push(player);
@@ -118,9 +123,10 @@ export const registerRooms = (io, {
             }
         });
 
-        onRequest('room:create', ({ name }) => {
+        onRequest('room:create', ({ name, characterId }) => {
             if (socket.data.roomCode) fail('ALREADY_JOINED', 'Вы уже находитесь в комнате.');
             const validName = normalizeName(name);
+            const validCharacter = validateCharacter(characterId);
             if (rooms.size >= maxRooms) fail('SERVER_FULL', 'Сервер заполнен. Попробуйте позже.');
             const address = socket.handshake.address;
             const limit = creationLimits.get(address) ?? { count: 0, until: Date.now() + 60_000 };
@@ -130,16 +136,17 @@ export const registerRooms = (io, {
             let code; do { code = roomCode(); } while (rooms.has(code));
             const room = { code, players: [], hostId: null, phase: 'waiting', revision: 0, game: createInitialGameState(), seen: new Map(), updatedAt: Date.now(), rollTimer: null };
             rooms.set(code, room);
-            return addPlayer(socket, room, validName);
+            return addPlayer(socket, room, validName, validCharacter);
         });
-        onRequest('room:join', ({ code, name }) => {
+        onRequest('room:join', ({ code, name, characterId }) => {
             if (socket.data.roomCode) fail('ALREADY_JOINED', 'Вы уже находитесь в комнате.');
             const room = rooms.get(normalizeCode(code));
             if (!room) fail('ROOM_NOT_FOUND', 'Комната не найдена. Проверьте код.');
             const validName = normalizeName(name);
+            const validCharacter = validateCharacter(characterId);
             if (room.phase !== 'waiting') fail('ALREADY_STARTED', 'Партия уже началась.');
             if (room.players.length >= MAX_ROOM_PLAYERS) fail('ROOM_FULL', 'Все четыре места заняты.');
-            return addPlayer(socket, room, validName);
+            return addPlayer(socket, room, validName, validCharacter);
         });
         onRequest('room:resume', ({ code, token }) => {
             const room = rooms.get(normalizeCode(code));
@@ -158,7 +165,7 @@ export const registerRooms = (io, {
                 if (!saved || typeof saved.token !== 'string' || saved.token.length > 128) continue;
                 const room = rooms.get(normalizeCode(saved.code));
                 const player = room?.players.find(member => member.tokenHash === hashToken(saved.token));
-                if (player) available.push({ roomCode: room.code, playerId: player.id, name: player.name, color: player.color,
+                if (player) available.push({ roomCode: room.code, playerId: player.id, name: player.name, characterId: player.characterId, color: player.color,
                     connected: Boolean(player.socketId), phase: room.phase });
             }
             return { sessions: available };

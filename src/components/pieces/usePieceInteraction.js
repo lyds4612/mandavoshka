@@ -82,9 +82,11 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         const move = available[id];
         const rect = pieceRect(pieceElement(tableRef.current, id));
         if (!move || !rect) return;
-        setSelectedId(id);
+        const placement = (selected?.action === 'place' ? selected : !selectedId ? placing : null);
+        const tapPlacement = placement?.targets.includes(move.piece.tile) ? placement : null;
+        if (!tapPlacement) setSelectedId(selectedId === id ? null : id);
         source.closest('button')?.focus({ preventScroll: true });
-        gesture.current = { id, game, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, rect, position: rect, dragging: false };
+        gesture.current = { id, game, tapPlacement, pointerId: event.pointerId, startX: event.clientX, startY: event.clientY, rect, position: rect, dragging: false };
         tableRef.current.setPointerCapture(event.pointerId);
     };
     const onPointerMove = event => {
@@ -93,6 +95,7 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         if (!current.dragging && Math.hypot(event.clientX - current.startX, event.clientY - current.startY) < 6) return;
         if (!current.dragging) {
             current.dragging = true;
+            setSelectedId(current.id);
             const scroll = () => {
                 const active = gesture.current;
                 if (!active?.dragging) return;
@@ -141,7 +144,14 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         cancelAnimationFrame(scrollFrame.current);
         suppressClick.current = Date.now() + 350;
         if (tableRef.current.hasPointerCapture(event.pointerId)) tableRef.current.releasePointerCapture(event.pointerId);
-        if (!current.dragging) return;
+        if (!current.dragging) {
+            if (current.tapPlacement && current.game === latest.current.game) {
+                const placementId = pieceId(current.tapPlacement.color, current.tapPlacement.index);
+                const placement = latest.current.available[placementId];
+                if (placement?.action === 'place') commit(placementId, placement);
+            }
+            return;
+        }
         const move = latest.current.available[current.id];
         if (move && current.game === latest.current.game && hitTarget(event.clientX, event.clientY, move)) {
             setLearnedDrag(true);
@@ -154,25 +164,34 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
     };
     const onTileClick = tileIndex => {
         const move = Object.entries(available).find(([, value]) => value.piece.tile === tileIndex);
-        if (!selectedId && move) { setSelectedId(move[0]); return; }
+        if (selected?.piece.tile === tileIndex) { setSelectedId(null); return; }
+        if (move && selected?.action === 'move') { setSelectedId(move[0]); return; }
         if (preview?.targets.includes(tileIndex)) { commit(selectedId ?? pieceId(preview.color, preview.index), preview); return; }
         setSelectedId(move?.[0] ?? null);
     };
     const onReserveClick = (color, index) => {
-        if (selected?.tile === null && selected.color === color) { commit(selectedId, selected); return; }
         const id = pieceId(color, index);
-        if (available[id]) setSelectedId(id);
+        if (selected?.tile === null && selected.color === color && !available[id]) { commit(selectedId, selected); return; }
+        if (available[id]) setSelectedId(selectedId === id ? null : id);
     };
     return {
         selectedId, selectedTileIndex: selected?.piece.tile, available, drag,
         targetTiles: preview?.targets ?? [], returnColor: preview?.tile === null ? preview.color : null,
         onTileClick, onReserveClick, clearSelection: () => { cancel(); setSelectedId(null); },
+        canPlace: Boolean(placing), placementTile: placing?.tile,
+        placeFromHand: () => {
+            const placement = selected?.action === 'place' ? selected : placing;
+            if (placement) commit(pieceId(placement.color, placement.index), placement);
+        },
         moveSelected: () => { if (selected?.action === 'move') commit(selectedId, selected); },
         hint: drag?.phase === 'waiting' ? 'Подтверждаем ход…' : preview?.tile === null ? 'Верните фишку в руку'
-            : selected ? 'Перетащите фишку или нажмите на цель'
-                : placing ? learnedDrag ? 'Старт подсвечен — поставьте фишку' : 'Перетащите фишку на старт'
+            : selected ? 'Повторное нажатие отменяет выбор'
+                : placing ? learnedDrag ? 'Нажмите на старт или «На старт»' : 'Нажмите на старт или перетащите фишку'
                     : Object.keys(available).length ? 'Выберите фишку или перетащите её' : 'Для новой фишки нужна шестёрка',
         pointerHandlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: cancel, onLostPointerCapture: () => { if (gesture.current) cancel(); },
-            onClickCapture: event => { if (event.detail !== 0 && Date.now() < suppressClick.current) { suppressClick.current = 0; event.preventDefault(); event.stopPropagation(); } } },
+            onClickCapture: event => {
+                if (event.detail !== 0 && Date.now() < suppressClick.current) { suppressClick.current = 0; event.preventDefault(); event.stopPropagation(); return; }
+                if (event.target.closest('#game-board') && !event.target.closest('[data-tile-index], button')) setSelectedId(null);
+            } },
     };
 };

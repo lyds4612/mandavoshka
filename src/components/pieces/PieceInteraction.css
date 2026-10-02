@@ -3,10 +3,21 @@
 .piece-drag { box-shadow: inset 0 0 0 2px #ffffff26, inset 0 -3px 4px #0005, 0 12px 18px #0009; transform-origin: center; }
 .piece.is-draggable { cursor: grab; touch-action: none; user-select: none; -webkit-user-select: none; }
 .piece.is-drag-source { opacity: .15; }
+.piece.is-selected { outline: 2px solid var(--player-light); outline-offset: 1px; filter: brightness(1.18); }
 .reserve-slot { padding: 0; border: 0; color: inherit; font: inherit; }
 .reserve-slot:disabled { opacity: 1; cursor: default; }
 .reserve-slot.is-draggable { cursor: grab; touch-action: none; }
 .reserve-slot.is-draggable:hover .piece, .reserve-slot.is-selected .piece { filter: brightness(1.2); box-shadow: 0 0 0 2px var(--player-light), 0 0 12px var(--player-accent); }
+.reserve-slot.is-away:not(:disabled) { cursor: pointer; }
+.reserve-slot.is-away.is-selected { outline: 2px solid var(--player-light); }
+.player-piece-actions { display: flex; gap: 4px; height: 32px; justify-content: center; }
+.piece-confirm-action, .cancel-piece-selection { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 32px; padding: 4px 8px; border: 1px solid #b99a6366; border-radius: 4px; color: var(--ink); background: #493721; font: 600 11px/16px 'Segoe UI', sans-serif; cursor: pointer; }
+.piece-confirm-action > span:first-child { font-size: 18px; }
+.player-piece-actions .cancel-piece-selection { width: 32px; padding: 0; flex-shrink: 0; font-size: 20px; }
+.piece-confirm-action:disabled, .cancel-piece-selection:disabled { opacity: .45; cursor: default; }
+.piece-confirm-action:focus-visible, .cancel-piece-selection:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.player-turn-details.has-piece-actions .player-play-hint { position: absolute; width: 1px; height: 1px; margin: -1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+.App[data-theme='prison'] .piece-confirm-action, .App[data-theme='prison'] .cancel-piece-selection { background: #1b2c32ed; border-color: #8eaaa866; }
 .reserve-slot:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
 .player-reserve.is-return-target { outline: 2px dashed var(--player-light); outline-offset: 5px; border-radius: 6px; background: color-mix(in srgb, var(--player-accent) 25%, transparent); }
 .player-reserve.is-drop-hover { outline-style: solid; box-shadow: 0 0 20px var(--player-accent); }

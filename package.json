@@ -22,11 +22,18 @@
     "web-vitals": "^2.1.4"
   },
   "scripts": {
+    "characters": "node scripts/sync-characters.mjs",
+    "prestart": "npm run characters",
     "start": "react-scripts start",
+    "prebuild": "npm run characters",
     "build": "react-scripts build",
     "test": "react-scripts test",
+    "pretest:characters": "npm run characters",
+    "test:characters": "node --test server/characters.test.mjs",
     "eject": "react-scripts eject",
+    "preserver": "npm run characters",
     "server": "node server/index.mjs",
+    "predev": "npm run characters",
     "dev": "node scripts/dev.mjs"
   },
   "eslintConfig": {
