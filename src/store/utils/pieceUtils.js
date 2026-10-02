@@ -10,10 +10,8 @@ export const moveCapturedOpponentsToPrison = ({ pieces, currentPlayerColor, targ
 
         for (let i = 0; i < playerPieces.length; i += 1) {
             if (playerPieces[i].tile === targetTile) {
-                pieces[pieceColor][i] = {
-                    ...playerPieces[i],
-                    tile: prisonTileIndex,
-                };
+                playerPieces[i].tile = prisonTileIndex;
+                playerPieces[i].progress = null;
             }
         }
     });

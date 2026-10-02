@@ -45,6 +45,7 @@ button:disabled {
     display: flex;
     flex-direction: column;
     align-items: center;
+    max-width: 560px;
 }
 
 .remaining-pieces {
@@ -53,4 +54,20 @@ button:disabled {
     gap: 30px;
     align-content: center;
     justify-content: center;
+}
+
+.turn-message {
+    min-height: 24px;
+    padding: 8px 14px;
+    border-radius: 10px;
+    background: #ffffff;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.08);
+}
+
+.winner-message {
+    padding: 12px 18px;
+    border: 2px solid currentColor;
+    border-radius: 12px;
+    font-size: 22px;
+    font-weight: 700;
 }

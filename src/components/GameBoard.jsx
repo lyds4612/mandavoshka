@@ -1,26 +1,32 @@
-import React, {useEffect, useState} from 'react';
+import React from 'react';
 import './GameBoard.css';
+import AlleyArrows from './AlleyArrows';
 import {useSelector} from "react-redux";
 import {flattened} from "../helpers";
-import { selectDice, selectPieces, selectPlayers, selectTileIndexes, selectTiles } from '../store/selectors/gameSelectors';
+import { selectPieces, selectPlayers, selectTileIndexes, selectTiles } from '../store/selectors/gameSelectors';
 
 const FIGURE_SYMBOLS = ['♥', '♦', '♠', '♣'];
+const CELL_SIZE = 50;
+const CELL_GAP = 5;
 
 const isFigureSymbol = (cell) => FIGURE_SYMBOLS.includes(cell);
 const isEmptyCell = (cell) => cell === '';
 const isStartPosition = (tileIndex, startPositions) => startPositions.includes(tileIndex);
 const isJailTile = (tile) => tile?.name === 'jail';
 const isPrisonTile = (tile) => tile?.name === 'prison';
-const isSelectedCell = (selectedCell, rowIndex, cellIndex) =>
-    selectedCell[0] === rowIndex && selectedCell[1] === cellIndex;
+const isHomeTile = (tile) => tile?.name === 'home';
+const isAlleyTile = (tile) => tile?.name === 'alley';
 
-const buildCellClassNames = ({ cell, tileIndex, startPositions, tile, selectedCell, rowIndex, cellIndex }) => {
+const buildCellClassNames = ({ cell, tile, isSelected, isMovable, cellIndex }) => {
     const classNames = ['cell', `col-${cellIndex}`];
 
     if (isPrisonTile(tile))     classNames.push('prison');
+    if (isHomeTile(tile))       classNames.push('home');
+    if (isAlleyTile(tile))      classNames.push('alley');
     if (isFigureSymbol(cell))   classNames.push(cell);
     if (isEmptyCell(cell))      classNames.push('empty');
-    if (isSelectedCell(selectedCell, rowIndex, cellIndex)) classNames.push('selected');
+    if (isSelected)             classNames.push('selected');
+    if (isMovable)              classNames.push('movable');
 
     return classNames.join(' ');
 };
@@ -37,6 +43,15 @@ const buildCellStyle = ({ tileIndex, startPositions, tile }) => {
     if (isPrisonTile(tile)) {
         style.backgroundColor = 'grey';
     }
+    if (isHomeTile(tile)) {
+        const homeColors = {
+            green: 'rgba(0, 128, 0, 0.24)',
+            black: 'rgba(0, 0, 0, 0.18)',
+            red: 'rgba(255, 0, 0, 0.22)',
+            orange: 'rgba(255, 165, 0, 0.28)',
+        };
+        style.backgroundColor = homeColors[tile.owner];
+    }
 
     return style;
 };
@@ -46,7 +61,13 @@ const buildCellContent = ({ cell, tileIndex, pieces }) => {
 
     if (playerPieces.length > 0) {
         return playerPieces.map((piece, i) => (
-            <div key={i} className="piece" style={{backgroundColor: piece.color}}/>
+            <div
+                key={i}
+                className="piece"
+                data-piece-color={piece.color}
+                data-piece-progress={piece.progress ?? ''}
+                style={{backgroundColor: piece.color}}
+            />
         ));
     }
 
@@ -57,35 +78,39 @@ const buildCellContent = ({ cell, tileIndex, pieces }) => {
     return null;
 };
 
-const GameBoard = ({ board, onTileClick }) => {
-    const [selectedCell, setSelectedCell] = useState([]);
+const GameBoard = ({ board, onTileClick, selectedTileIndex, movableTileIndexes }) => {
     const tileIndexes = useSelector(selectTileIndexes);
     const players = useSelector(selectPlayers);
-    const dice = useSelector(selectDice);
     const pieces = useSelector(selectPieces);
     const tiles = useSelector(selectTiles);
     const startPositions = players.map((player) => player.start);
 
-    useEffect(() => {
-        setSelectedCell([]);
-    }, [dice])
-
     return (
-        <div id="game-board">
+        <div
+            id="game-board"
+            style={{ '--cell-size': `${CELL_SIZE}px`, '--cell-gap': `${CELL_GAP}px` }}
+        >
+            <AlleyArrows
+                tiles={tiles}
+                tileIndexes={tileIndexes}
+                gridInset={CELL_SIZE / (2 * (CELL_SIZE + CELL_GAP))}
+            />
             {board.map((row, rowIndex) => (
                 <div key={rowIndex} className={`row row-${rowIndex}`}>
                     {row.map((cell, cellIndex) => {
                         const tileIndex = tileIndexes.pos[`${rowIndex}, ${cellIndex}`];
                         const tile = tiles[tileIndex];
+                        const isSelected = tileIndex === selectedTileIndex;
+                        const isMovable = movableTileIndexes.includes(tileIndex);
 
                         const style = buildCellStyle({ tileIndex, startPositions, tile });
-                        const className = buildCellClassNames({ cell, tileIndex, startPositions, tile, selectedCell, rowIndex, cellIndex });
+                        const className = buildCellClassNames({ cell, tile, isSelected, isMovable, cellIndex });
                         const content = buildCellContent({ cell, tileIndex, pieces });
 
                         const handleCellClick = () => {
-                            const isAlreadySelected = isSelectedCell(selectedCell, rowIndex, cellIndex);
-                            setSelectedCell(isAlreadySelected ? [] : [rowIndex, cellIndex]);
-                            onTileClick(rowIndex, cellIndex);
+                            if (isMovable) {
+                                onTileClick(tileIndex);
+                            }
                         };
 
                         return (
@@ -94,8 +119,14 @@ const GameBoard = ({ board, onTileClick }) => {
                                 style={style}
                                 className={className}
                                 onClick={handleCellClick}
+                                data-tile-index={tileIndex ?? ''}
+                                data-tile-type={tile?.name ?? ''}
+                                data-movable={isMovable ? 'true' : 'false'}
+                                data-alley-target={isAlleyTile(tile) ? tile.moveTo : undefined}
+                                title={isAlleyTile(tile) ? 'Подворотня: переход на другую сторону угла в обе стороны' : undefined}
                             >
                                 {content}
+                                {isAlleyTile(tile) && <span className="alley-indicator" aria-hidden="true">⇄</span>}
                             </div>
                         );
                     })}

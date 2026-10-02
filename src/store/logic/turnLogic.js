@@ -1,71 +1,91 @@
-import { createInitialPlayerState } from '../gameBoardInit';
-import {
-    calculatePlayerActionFlags,
-    shouldSkipTurnAfterRoll,
-    shouldEndTurnAfterPlacement,
-    shouldEndTurnAfterMovement,
-} from '../utils/playerStateUtils';
+import { calculateActionFlags } from './gameRules';
 
 const setActionFlags = (state, flags) => {
     state.canMove = flags.canMove;
     state.canPlace = flags.canPlace;
-    state.canRoll = flags.canRoll;
+};
+
+const clearRolledValues = (state) => {
+    state.dice = [null, null];
+    state.moves = [];
 };
 
 export const changePlayer = (state) => {
     state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
-    state.currentPlayer = state.players[state.currentPlayerIndex];
 };
 
-export const consumeCurrentMove = (state, forceConsume) => {
-    const moveValue = state.moves[0];
-    if (forceConsume) {
-        const forceIndex = state.moves.indexOf(forceConsume);
-        if (forceIndex === -1) {
-            console.error('Trying to force consume move that does not exist:', forceConsume);
-            return;
-        }   
-        state.moves.splice(forceIndex, 1);
-        state.dice[state.dice.indexOf(forceIndex)] = null;
-    } else {
-        state.moves.shift();
-        state.dice[state.dice.indexOf(moveValue)] = null;
+export const consumeMoveValue = (state, moveValue) => {
+    const moveIndex = state.moves.indexOf(moveValue);
+    if (moveIndex === -1) {
+        return false;
     }
+
+    state.moves.splice(moveIndex, 1);
+
+    const dieIndex = state.dice.indexOf(moveValue);
+    if (dieIndex !== -1) {
+        state.dice[dieIndex] = null;
+    }
+
+    return true;
 };
 
-export const recalculateCurrentPlayerFlags = (state, player) => {
-    const actionFlags = calculatePlayerActionFlags({
-        pieces: state.pieces[player.color],
-        dice: state.dice,
-        moves: state.moves,
-        lastDice: player.lastDice,
-    });
-
-    setActionFlags(state, actionFlags);
-    return actionFlags;
+const blockFinishedGame = (state) => {
+    clearRolledValues(state);
+    state.bonusRollPending = false;
+    state.canRoll = false;
+    state.canMove = false;
+    state.canPlace = false;
+    state.turnMessage = `Победил игрок ${state.winner}!`;
 };
 
-export const resetTurnAndChangePlayer = (state) => {
-    createInitialPlayerState(state);
+const prepareExtraRoll = (state) => {
+    clearRolledValues(state);
+    state.bonusRollPending = false;
+    state.canRoll = true;
+    state.canMove = false;
+    state.canPlace = false;
+    state.turnMessage = 'Дубль: бросьте кубики ещё раз.';
+};
+
+const finishTurn = (state) => {
+    clearRolledValues(state);
+    state.bonusRollPending = false;
     changePlayer(state);
+    state.sizoMoveUsed = false;
+    state.canRoll = true;
+    state.canMove = false;
+    state.canPlace = false;
+    const player = state.players[state.currentPlayerIndex];
+    state.turnMessage = `Ход игрока ${player.color}. Бросьте кубики.`;
 };
 
-export const handlePostRollTurnState = (state, player) => {
-    const actionFlags = recalculateCurrentPlayerFlags(state, player);
-    if (shouldSkipTurnAfterRoll(actionFlags)) {
-        resetTurnAndChangePlayer(state);
+export const settleTurnState = (state) => {
+    if (state.winner) {
+        blockFinishedGame(state);
+        return;
     }
-};
 
-export const handlePostPlacementTurnState = (state, player) => {
-    recalculateCurrentPlayerFlags(state, player);
-    if (shouldEndTurnAfterPlacement(state)) {
-        resetTurnAndChangePlayer(state);
-    }
-};
+    let actionFlags = calculateActionFlags(state);
 
-export const handlePostMovementTurnState = (state) => {
-    if (shouldEndTurnAfterMovement(state)) {
-        resetTurnAndChangePlayer(state);
+    // Values are resolved from largest to smallest. If the current largest
+    // value cannot be used by any legal action, discard it and try the next.
+    while (!actionFlags.canMove && !actionFlags.canPlace && state.moves.length > 0) {
+        consumeMoveValue(state, state.moves[0]);
+        actionFlags = calculateActionFlags(state);
     }
+
+    if (actionFlags.canMove || actionFlags.canPlace) {
+        setActionFlags(state, actionFlags);
+        state.canRoll = false;
+        state.turnMessage = `${state.turnMessage} Выберите допустимое действие.`;
+        return;
+    }
+
+    if (state.bonusRollPending) {
+        prepareExtraRoll(state);
+        return;
+    }
+
+    finishTurn(state);
 };

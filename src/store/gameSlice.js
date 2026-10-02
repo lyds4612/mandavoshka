@@ -1,142 +1,174 @@
-import {createSlice} from '@reduxjs/toolkit';
-import {createInitialGameState} from "./gameBoardInit";
-import { rollDice as rollPairDice, createMoveQueue } from './utils/diceUtils';
+import { createSlice } from '@reduxjs/toolkit';
+
+import { createInitialGameState, OUTER_LAYER_TILES_COUNT } from './gameBoardInit';
 import {
-    consumeCurrentMove,
-    handlePostRollTurnState,
-    handlePostPlacementTurnState,
-    handlePostMovementTurnState,
-    recalculateCurrentPlayerFlags,
-} from './logic/turnLogic';
+    calculateOrdinaryMove,
+    getPieceProgress,
+    getRequiredMoveForPiece,
+    isPieceInJail,
+    isPieceInPrison,
+    isWinningPosition,
+} from './logic/gameRules';
+import { consumeMoveValue, settleTurnState } from './logic/turnLogic';
+import { rollDice as rollPairDice, createMoveQueue } from './utils/diceUtils';
 import { findPlayerPieceOnTile, moveCapturedOpponentsToPrison } from './utils/pieceUtils';
-import { calculateDestinationTile, isPrisonTile, TILE_TYPES } from './utils/tileUtils';
-import { hasSixInDice } from './utils/playerStateUtils';
+
 const initialState = createInitialGameState();
+
+const currentPlayer = (state) => state.players[state.currentPlayerIndex];
+
+const captureOpponentsAt = (state, player, targetTile) => {
+    if (!Number.isInteger(targetTile) || targetTile < 0 || targetTile >= OUTER_LAYER_TILES_COUNT) {
+        return;
+    }
+
+    moveCapturedOpponentsToPrison({
+        pieces: state.pieces,
+        currentPlayerColor: player.color,
+        targetTile,
+        prisonTileIndex: state.prisonTileIndex,
+    });
+};
+
+const updateWinner = (state, player) => {
+    if (isWinningPosition(state, player)) {
+        state.winner = player.color;
+    }
+};
+
+const movePrisonPiece = (state, player, piece) => {
+    const availableSixes = state.moves.filter((move) => move === 6).length;
+
+    if (availableSixes >= 2) {
+        consumeMoveValue(state, 6);
+        consumeMoveValue(state, 6);
+        piece.tile = player.start;
+        piece.progress = 0;
+        captureOpponentsAt(state, player, player.start);
+        state.turnMessage = 'Фишка вышла из тюрьмы прямо на старт.';
+        return;
+    }
+
+    consumeMoveValue(state, 6);
+    piece.tile = null;
+    piece.progress = null;
+    state.turnMessage = 'Фишка возвращена из тюрьмы в руку.';
+};
+
+const moveJailPiece = (state, player, piece) => {
+    const jailTile = state.tiles[piece.tile];
+    consumeMoveValue(state, jailTile.needToRoll);
+    state.sizoMoveUsed = true;
+
+    if (jailTile.nextTile !== undefined) {
+        piece.tile = jailTile.nextTile;
+        state.turnMessage = `СИЗО: пройдена камера ${jailTile.needToRoll}.`;
+        return;
+    }
+
+    const currentProgress = Number.isInteger(piece.progress)
+        ? piece.progress
+        : (jailTile.entryTile - player.start + OUTER_LAYER_TILES_COUNT) % OUTER_LAYER_TILES_COUNT;
+    const exitDistance =
+        (jailTile.exitTile - jailTile.entryTile + OUTER_LAYER_TILES_COUNT) % OUTER_LAYER_TILES_COUNT;
+
+    piece.tile = jailTile.exitTile;
+    piece.progress = currentProgress + exitDistance;
+    captureOpponentsAt(state, player, piece.tile);
+    state.turnMessage = 'Фишка вышла из СИЗО.';
+};
+
+const moveOrdinaryPiece = (state, player, piece, moveValue) => {
+    const destination = calculateOrdinaryMove({ state, piece, player, moveValue });
+    if (!destination) {
+        return false;
+    }
+
+    consumeMoveValue(state, moveValue);
+    piece.tile = destination.tile;
+    piece.progress = destination.progress;
+    captureOpponentsAt(state, player, destination.tile);
+    state.turnMessage = Number.isInteger(destination.alleyEntry)
+        ? 'Подворотня: фишка перешла на другую сторону угла.'
+        : `Фишка передвинута на ${moveValue}.`;
+    return true;
+};
 
 const gameSlice = createSlice({
     name: 'game',
     initialState,
     reducers: {
         rollDice(state) {
+            if (!state.canRoll || state.winner) {
+                return;
+            }
+
             const dice = rollPairDice();
-            const moves = createMoveQueue(dice);
-            console.log('Dice:', dice.join(', '));
-            state.moves = moves;
             state.dice = dice;
-            const player = state.players.find(player => player.color === state.currentPlayer.color)
-            player.lastDice = [...dice]
-            handlePostRollTurnState(state, player);
+            state.moves = createMoveQueue(dice);
+            state.bonusRollPending = dice[0] === dice[1];
+            state.canRoll = false;
+            state.turnMessage = `Выпало ${dice[0]} и ${dice[1]}.`;
+
+            const player = currentPlayer(state);
+            player.lastDice = [...dice];
+            settleTurnState(state);
         },
+
         placePiece(state) {
-            const player = state.currentPlayer;
-            const piece = state.pieces[player.color].find((piece) => piece.tile === null);
-            if (!piece) {
+            if (!state.canPlace || state.winner) {
+                return;
+            }
+
+            const player = currentPlayer(state);
+            const piece = state.pieces[player.color].find((candidate) => candidate.tile === null);
+            if (!piece || !consumeMoveValue(state, 6)) {
                 return;
             }
 
             piece.tile = player.start;
+            piece.progress = 0;
+            captureOpponentsAt(state, player, player.start);
+            state.turnMessage = 'Новая фишка поставлена на старт.';
+            settleTurnState(state);
+        },
 
-             if (state.prisonTileIndex !== undefined && player.start !== undefined) {
-                moveCapturedOpponentsToPrison({
-                    pieces: state.pieces,
-                    currentPlayerColor: player.color,
-                    targetTile: player.start,
-                    prisonTileIndex: state.prisonTileIndex,
-                });
+        movePiece(state, { payload: tileIndex }) {
+            if (!state.canMove || state.winner) {
+                return;
             }
 
-            consumeCurrentMove(state);
-            console.log('Piece set to', piece.tile);
-            handlePostPlacementTurnState(state, player);
-        },
-        movePiece(state, { payload: tileIndex }) {
-            const player = state.currentPlayer;
+            const player = currentPlayer(state);
             const piece = findPlayerPieceOnTile({
                 pieces: state.pieces,
                 playerColor: player.color,
                 tileIndex,
             });
+            const requiredMove = piece ? getRequiredMoveForPiece(state, piece, player) : null;
 
-            if (!piece) {
-                console.error(`Piece of ${state.currentPlayer.color} not found on ${tileIndex}`)
+            if (!piece || requiredMove === null) {
+                state.turnMessage = 'Этой фишкой сейчас ходить нельзя.';
                 return;
             }
 
-            const moveValue = state.moves[0];
-            
-           const destinationIndex = calculateDestinationTile({
-                tiles: state.tiles,
-                fromTile: piece.tile,
-                moveValue,
-            });
-
-            if (isPrisonTile(piece.tile)) {
-                if (hasSixInDice(player.dice)) {
-                    //todo забрать фишку из тюрьмы в руку
-                    piece.tile = null;
-                    consumeCurrentMove(state);
-                    recalculateCurrentPlayerFlags(state, player);
-                    return;
-                }
-            }
-            
-            if (state.tiles[tileIndex].name === TILE_TYPES.jail) {
-                const {needToRoll} = state.tiles[tileIndex];
-                if (state.moves[0] === needToRoll) {
-                    console.log('Moving in jail from', tileIndex, 'to', tileIndex + 1);
-                    piece.tile = tileIndex + 1;
-                    
-                    consumeCurrentMove(state, needToRoll);
-                }
-                recalculateCurrentPlayerFlags(state, player);
-                handlePostMovementTurnState(state);
-                console.error('Trying to move from jail tile without correct roll');
-                return;
+            if (isPieceInPrison(state, piece)) {
+                movePrisonPiece(state, player, piece);
+            } else if (isPieceInJail(state, piece)) {
+                moveJailPiece(state, player, piece);
+            } else {
+                piece.progress = getPieceProgress(state, piece, player);
+                moveOrdinaryPiece(state, player, piece, requiredMove);
             }
 
-            if (state.tiles[destinationIndex]?.name === TILE_TYPES.jailEnter) {
-                console.log('Moving to jail from', tileIndex, 'to', destinationIndex);
-                piece.tile = state.tiles[destinationIndex].moveTo;
-                consumeCurrentMove(state);
-                recalculateCurrentPlayerFlags(state, player);
-                handlePostMovementTurnState(state);
-                return;    
-            }
-
-            if (state.prisonTileIndex !== undefined && destinationIndex !== undefined) {
-                moveCapturedOpponentsToPrison({
-                    pieces: state.pieces,
-                    currentPlayerColor: player.color,
-                    targetTile: destinationIndex,
-                    prisonTileIndex: state.prisonTileIndex,
-                });
-            }
-
-            piece.tile = destinationIndex;
-
-            consumeCurrentMove(state);
-            recalculateCurrentPlayerFlags(state, player);
-
-            if (state.moves.length === 0) {
-                handlePostMovementTurnState(state);
-            }
+            updateWinner(state, player);
+            settleTurnState(state);
         },
+
         resetGame() {
             return createInitialGameState();
         },
-        endTurn(state) {
-            handlePostMovementTurnState(state);
-        }
     },
 });
 
-export const {
-    rollDice: rollDiceAction,
-    placePiece,
-    movePiece,
-    resetGame,
-    endTurn,
-} = gameSlice.actions;
-
-export { rollDiceAction as rollDice };
+export const { rollDice, placePiece, movePiece, resetGame } = gameSlice.actions;
 export default gameSlice.reducer;

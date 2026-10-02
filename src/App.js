@@ -3,16 +3,18 @@ import { useSelector, useDispatch } from 'react-redux';
 import './App.css';
 import GameBoard from './components/GameBoard';
 import Dice from './components/Dice';
-import {movePiece, placePiece, resetGame, rollDice, endTurn} from "./store/gameSlice";
+import {movePiece, placePiece, resetGame, rollDice} from "./store/gameSlice";
 import {
     selectActionFlags,
     selectCurrentPlayerColor,
     selectCurrentPlayerPieces,
+    selectGameState,
+    selectMovableTileIndexes,
     selectMoves,
     selectPieces,
     selectPlayers,
-    selectTileIndexes,
-    selectTiles,
+    selectTurnMessage,
+    selectWinner,
 } from './store/selectors/gameSelectors';
 
 const board = createInitialBoard();
@@ -45,27 +47,23 @@ function createInitialBoard() {
     ];
 }
 
-const buildTilePositionKey = (rowIndex, cellIndex) => `${rowIndex}, ${cellIndex}`;
-
-const findTileByBoardPosition = ({ tileIndexes, tiles, rowIndex, cellIndex }) => {
-    const tileIndex = tileIndexes.pos[buildTilePositionKey(rowIndex, cellIndex)];
-    if (tileIndex === undefined || tileIndex === -1) {
-        return null;
-    }
-
-    return tiles[tileIndex] ?? null;
+const renderHandPieces = (pieces, color) => {
+    return pieces
+        .filter((piece) => piece.tile === null)
+        .map((piece, index) => (
+            <div className="piece" key={`${color}-hand-${index}`} style={{backgroundColor: color}}/>
+        ));
 };
 
-const renderBoardPiecesByColor = (piecesOrMap, color) => {
-    const pieces = Array.isArray(piecesOrMap) ? piecesOrMap : piecesOrMap[color];
-
-    return pieces.map((piece, i) => {
-        if (piece.tile !== null) {
-            return <div className="piece" key={color + i} style={{border: `solid, ${piece.color} 1px`}}></div>;
-        }
-        return <div className="piece" key={color + i} style={{backgroundColor: color}}></div>;
-    }).reverse();
-};
+const summarizePieces = ({ pieces, tiles, prisonTileIndex }) => pieces.reduce((summary, piece) => {
+    const tile = tiles[piece.tile];
+    if (piece.tile === null) summary.hand += 1;
+    else if (piece.tile === prisonTileIndex) summary.prison += 1;
+    else if (tile?.name === 'jail') summary.jail += 1;
+    else if (tile?.name === 'home') summary.home += 1;
+    else summary.field += 1;
+    return summary;
+}, { hand: 0, field: 0, jail: 0, prison: 0, home: 0 });
 
 const CurrentPlayerPanel = ({
     canRoll,
@@ -77,33 +75,36 @@ const CurrentPlayerPanel = ({
     onRollDice,
     onPlacePiece,
     onMovePiece,
-    onMoveEnd,
     currentPlayerPieces,
+    turnMessage,
+    winner,
 }) => {
     return (
         <div className="current-player">
             <Dice/>
-            <button disabled={!canRoll} onClick={onRollDice}>БРОСАЙ КУБИК</button>
+            <button disabled={!canRoll || Boolean(winner)} onClick={onRollDice}>БРОСИТЬ КУБИКИ</button>
             <div>
                 ТЕКУЩИЙ ИГРОК: <span style={{color: currentPlayerColor}}>{currentPlayerColor}</span>
             </div>
-            <div>Ходов: {moves.length}</div>
-            <div className="remaining-pieces">{renderBoardPiecesByColor(currentPlayerPieces, currentPlayerColor)}</div>
+            <div>Осталось значений: {moves.length}</div>
+            <div className="turn-message" role="status">{turnMessage}</div>
+            {winner && <div className="winner-message">Победил игрок {winner}!</div>}
+            <div>Фишки в руке:</div>
+            <div className="remaining-pieces">{renderHandPieces(currentPlayerPieces, currentPlayerColor)}</div>
             <div>
                 <button disabled={!canPlace} onClick={onPlacePiece}>ПОСТАВИТЬ ФИГУРУ</button>
-                <button disabled={!selectedTile || !canMove} onClick={onMovePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
-                <button onClick={onMoveEnd}>[DEV] Закончить ход</button>
+                <button disabled={selectedTile === null || !canMove} onClick={onMovePiece}>ПЕРЕДВИНУТЬ ФИГУРУ</button>
             </div>
         </div>
     );
 };
 
-const PlayersOnBoard = ({ players, pieces, currentPlayerColor }) => {
+const PlayersOnBoard = ({ players, pieces, currentPlayerColor, tiles, prisonTileIndex }) => {
     return (
         <div className='players-on-board'>
             <div className='player'>
                 <div className="what-a-player">Игрок:</div>
-                <div className="pieces" style={{alignItems: 'center', paddingBottom: '6px'}}>Количество фишек:</div>
+                <div className="pieces" style={{alignItems: 'center', paddingBottom: '6px'}}>Состояние фишек:</div>
                 <div className="last-move" style={{paddingTop: '5px'}}>Последний ход:</div>
             </div>
             {players.map(({color, lastDice})=> {
@@ -111,12 +112,21 @@ const PlayersOnBoard = ({ players, pieces, currentPlayerColor }) => {
                     color,
                     borderTopColor: currentPlayerColor === color && color
                 };
+                const summary = summarizePieces({
+                    pieces: pieces[color],
+                    tiles,
+                    prisonTileIndex,
+                });
 
                 return (
                     <div key={color} className="player" style={style}>
                         {color}
-                        <div className="pieces">
-                            {renderBoardPiecesByColor(pieces, color)}
+                        <div className="piece-summary">
+                            <span>рука {summary.hand}</span>
+                            <span>поле {summary.field}</span>
+                            <span>СИЗО {summary.jail}</span>
+                            <span>тюрьма {summary.prison}</span>
+                            <span>хата {summary.home}</span>
                         </div>
                         <div className="last-dice">{lastDice?.join(' : ')}</div>
                     </div>
@@ -129,63 +139,64 @@ const PlayersOnBoard = ({ players, pieces, currentPlayerColor }) => {
 
 const App = () => {
     const dispatch = useDispatch();
-    const tileIndexes = useSelector(selectTileIndexes);
-    const tiles = useSelector(selectTiles);
+    const game = useSelector(selectGameState);
     const currentPlayerColor = useSelector(selectCurrentPlayerColor);
     const currentPlayerPieces = useSelector(selectCurrentPlayerPieces);
     const pieces = useSelector(selectPieces);
     const moves = useSelector(selectMoves);
     const players = useSelector(selectPlayers);
+    const movableTileIndexes = useSelector(selectMovableTileIndexes);
+    const turnMessage = useSelector(selectTurnMessage);
+    const winner = useSelector(selectWinner);
     const { canRoll, canMove, canPlace } = useSelector(selectActionFlags);
 
-    const [selectedTile, setSelectedTile] = useState(null);
+    const [selectedTileIndex, setSelectedTileIndex] = useState(null);
 
-    const handleSelectTile = (rowIndex, cellIndex) => {
-        const tile = findTileByBoardPosition({
-            tileIndexes,
-            tiles,
-            rowIndex,
-            cellIndex,
-        });
-
-        if (!tile) {
-            console.error(`Tile not found at: ${rowIndex}, ${cellIndex}`);
-            return;
-        }
-
-        console.log(`tile clicked ${tile.name} ${tile.index}`);
-
-        setSelectedTile(tile);
+    const handleSelectTile = (tileIndex) => {
+        setSelectedTileIndex((selected) => selected === tileIndex ? null : tileIndex);
     };
 
     const handleRollDice = () => {
+        setSelectedTileIndex(null);
         dispatch(rollDice());
     };
 
     const handlePlacePiece = () => {
+        setSelectedTileIndex(null);
         dispatch(placePiece());
     };
 
     const handleMovePiece = () => {
-        if (!selectedTile) {
+        if (selectedTileIndex === null) {
             return;
         }
 
-        dispatch(movePiece(selectedTile.index));
+        dispatch(movePiece(selectedTileIndex));
+        setSelectedTileIndex(null);
     };
 
-    const handleMoveEnd = () => {
-        dispatch(endTurn());
-    }
+    const handleReset = () => {
+        setSelectedTileIndex(null);
+        dispatch(resetGame());
+    };
 
     return (
-        <div className="App">
+        <div
+            className="App"
+            data-current-player={currentPlayerColor}
+            data-winner={winner ?? ''}
+        >
             <div>
                 <div>
                     <h1>ПОД ШКОНКУ, МАНДАВОШКА!</h1>
-                    <ResetGame/>
+                    <button onClick={handleReset}>НАЧАТЬ ЗАНОВО</button>
                 </div>
-                <GameBoard board={board} onTileClick={handleSelectTile}/>
+                <GameBoard
+                    board={board}
+                    onTileClick={handleSelectTile}
+                    selectedTileIndex={selectedTileIndex}
+                    movableTileIndexes={movableTileIndexes}
+                />
             </div>
 
             <CurrentPlayerPanel
@@ -194,32 +205,24 @@ const App = () => {
                 canPlace={canPlace}
                 currentPlayerColor={currentPlayerColor}
                 moves={moves}
-                selectedTile={selectedTile}
+                selectedTile={selectedTileIndex}
                 onRollDice={handleRollDice}
                 onPlacePiece={handlePlacePiece}
                 onMovePiece={handleMovePiece}
-                onMoveEnd={handleMoveEnd}
                 currentPlayerPieces={currentPlayerPieces}
+                turnMessage={turnMessage}
+                winner={winner}
             />
 
             <PlayersOnBoard
                 players={players}
                 pieces={pieces}
                 currentPlayerColor={currentPlayerColor}
+                tiles={game.tiles}
+                prisonTileIndex={game.prisonTileIndex}
             />
         </div>
     );
 };
-
-const ResetGame = () => {
-    const dispatch = useDispatch();
-
-    const onClick = () => {
-        dispatch(resetGame());
-    }
-    return <button onClick={onClick}>
-        Reset
-    </button>
-}
 
 export default App;
