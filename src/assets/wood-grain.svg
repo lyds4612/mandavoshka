@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1400" height="1000" viewBox="0 0 1400 1000">
+  <defs>
+    <linearGradient id="wood" x2="0" y2="1"><stop stop-color="#30251d"/><stop offset=".5" stop-color="#423023"/><stop offset="1" stop-color="#241b16"/></linearGradient>
+    <filter id="grain"><feTurbulence type="fractalNoise" baseFrequency=".004 .18" numOctaves="3" seed="14" stitchTiles="stitch"/><feColorMatrix type="saturate" values="0"/><feComponentTransfer><feFuncA type="linear" slope=".21"/></feComponentTransfer><feBlend in="SourceGraphic" mode="soft-light"/></filter>
+    <radialGradient id="shade"><stop stop-color="#000" stop-opacity="0"/><stop offset="1" stop-color="#000" stop-opacity=".52"/></radialGradient>
+  </defs>
+  <rect width="1400" height="1000" fill="url(#wood)" filter="url(#grain)"/>
+  <g fill="none" stroke="#ad8c63" opacity=".07"><path d="M0 82Q240 106 460 81T940 87T1400 82M0 86Q240 110 460 85T940 91T1400 86M0 267Q250 252 470 273T1040 261T1400 267M0 487Q370 469 610 490T1400 475M0 493Q370 475 610 496T1400 481M0 748Q330 765 670 744T1400 752M0 936Q280 920 570 940T1400 935"/></g>
+  <g stroke="#130e0b" stroke-width="3" opacity=".4"><path d="M0 202H1400M0 404H1400M0 606H1400M0 808H1400"/></g>
+  <rect width="1400" height="1000" fill="url(#shade)"/>
+</svg>

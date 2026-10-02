@@ -1,4 +1,4 @@
-import { calculateActionFlags } from './gameRules';
+import { calculateActionFlags } from './gameRules.js';
 
 const setActionFlags = (state, flags) => {
     state.canMove = flags.canMove;

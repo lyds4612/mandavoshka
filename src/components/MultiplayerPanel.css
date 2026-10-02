@@ -1,0 +1,65 @@
+.multiplayer-panel { max-width: 1208px; margin: 0 auto 32px; padding: 16px; background: #241b13ed; color: var(--ink); border: 1px solid #b99a635c; border-radius: 8px; }
+.online-setup summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 16px; font-weight: 600; list-style: none; }
+.online-setup summary::after { content: '+'; margin-left: auto; font-size: 20px; color: var(--gold); }
+.online-setup[open] summary::after { content: '−'; }
+.online-setup summary:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 4px; }
+.online-caption { color: var(--muted); font-weight: 400; font-size: 12px; }
+.multiplayer-panel.is-invitation { max-width: 640px; margin-top: clamp(32px, 10vh, 112px); padding: 32px; box-shadow: 0 16px 48px #0005; }
+.online-invitation { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 24px 16px; align-items: center; }
+.online-invitation-suit { color: var(--gold-light); font: 56px/1 Georgia, serif; text-align: center; }
+.online-invitation-copy h2 { font: 28px/1.2 Georgia, serif; margin-top: 8px; }
+.online-invitation-copy p { margin-top: 8px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.online-form.online-invite-form { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) auto; margin-top: 0; }
+.online-invitation > .online-error { grid-column: 1 / -1; margin: 0; }
+.online-form { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: end; gap: 16px; margin-top: 16px; }
+.online-form label { display: grid; gap: 8px; color: var(--muted); font-size: 12px; }
+.multiplayer-panel input { min-width: 0; width: 100%; padding: 8px; min-height: 44px; color: #f0dfb9; background: #17110c; border: 1px solid #b99a635c; border-radius: 4px; font-size: 14px; }
+.multiplayer-panel input:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.multiplayer-panel input::placeholder { color: #b9a68b; }
+.online-code { text-transform: uppercase; letter-spacing: .12em; }
+.online-room-heading { display: flex; align-items: center; justify-content: space-between; gap: 16px; }
+.online-room-heading > div { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 16px; }
+.online-identity { color: var(--muted); font-size: 14px; }
+.online-count { padding: 4px 8px; color: var(--muted); font-size: 12px; border: 1px solid #b99a6340; border-radius: 12px; white-space: nowrap; }
+.online-count[data-ready='true'] { color: #cbe6a6; border-color: #94b56770; background: #94b56712; }
+.online-connection-dot { width: 8px; height: 8px; border-radius: 50%; background: #d49c5b; }
+.online-connection-dot[data-connected='true'] { background: #a4c872; }
+.online-players { display: grid; grid-template-columns: repeat(var(--online-seat-count, 4), minmax(0, 1fr)); list-style: none; gap: 8px; margin-top: 16px; }
+.online-players li { display: flex; align-items: center; flex-wrap: wrap; gap: 4px 8px; padding: 8px; font-size: 14px; background: #ffffff05; border: 1px solid #b99a6326; border-radius: 4px; overflow-wrap: anywhere; }
+.online-players li.is-me { border-color: #c3a36a; background: #c3a36a13; }
+.online-players li.is-empty { border-style: dashed; opacity: .65; }
+.online-player-suit { font: 20px/1 Georgia, serif; }
+.online-seat-status { flex-basis: 100%; color: var(--muted); font-size: 12px; }
+.online-room-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; margin-top: 16px; }
+.online-room-actions .online-invite { flex: 1; min-width: 160px; }
+.online-room-actions .start-online-game { width: auto; }
+.online-status { flex-basis: 100%; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.online-error { color: #ffd0b6; background: #7d36212e; border: 1px solid #c9744859; border-radius: 4px; padding: 8px; margin-top: 8px; font-size: 14px; line-height: 1.5; }
+.online-players li.is-disconnected { border-color: #db826a80; background: #7d36212e; }
+.online-players li.is-disconnected .online-seat-status { color: #ffd0b6; }
+.online-presence { display: flex; align-items: center; gap: 16px; max-width: 1208px; padding: 16px; margin: 0 auto 16px; border: 1px solid #db826a80; border-radius: 6px; color: #ffdacb; background: #54251dc9; }
+.online-presence > div { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.online-presence strong { font-size: 16px; }
+.online-presence p, .online-restoring p { margin-top: 4px; font-size: 13px; line-height: 1.5; }
+.online-presence-icon { display: grid; place-items: center; flex: 0 0 28px; height: 28px; border: 1px solid currentColor; border-radius: 50%; font-weight: 700; }
+.online-presence.is-success, .online-presence.is-info { color: #d2e8b5; background: #24472f70; border-color: #94b56770; }
+.online-restoring { display: grid; gap: 8px; padding: 16px 0; }
+.online-restoring p { color: var(--muted); }
+.online-restoring .retry-recovery { justify-self: start; }
+@media (max-width: 980px) { .online-form { grid-template-columns: minmax(0, 1fr) auto; } .online-players { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+    .online-presence { flex-wrap: wrap; padding: 12px; gap: 12px; }
+    .online-presence .reconnect-room { width: 100%; }
+    .multiplayer-panel { margin-bottom: 24px; padding: 16px; }
+    .multiplayer-panel.is-invitation { margin-top: 32px; padding: 24px 16px; }
+    .online-invitation { grid-template-columns: 40px minmax(0, 1fr); gap: 24px 12px; }
+    .online-invitation-suit { font-size: 40px; }
+    .online-invitation-copy h2 { font-size: 24px; }
+    .online-form.online-invite-form { grid-template-columns: 1fr; }
+    .online-caption { display: none; }
+    .online-form { grid-template-columns: 1fr; }
+    .online-room-heading { align-items: start; }
+    .online-identity { font-size: 12px; }
+    .online-room-actions .online-invite { flex-basis: 100%; }
+    .online-room-actions .start-online-game { width: 100%; }
+}

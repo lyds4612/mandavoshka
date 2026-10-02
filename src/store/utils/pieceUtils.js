@@ -1,4 +1,8 @@
-export const findPlayerPieceOnTile = ({ pieces, playerColor, tileIndex }) => {
+export const findPlayerPieceOnTile = ({ pieces, playerColor, tileIndex, pieceIndex }) => {
+    if (pieceIndex !== undefined) {
+        const piece = Number.isInteger(pieceIndex) ? pieces[playerColor][pieceIndex] : null;
+        return piece?.tile === tileIndex ? piece : undefined;
+    }
     return pieces[playerColor].find((piece) => piece.tile === tileIndex);
 };
 

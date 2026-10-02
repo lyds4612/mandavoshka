@@ -1,0 +1,40 @@
+.theme-switch {
+    display: flex;
+    align-items: stretch;
+    padding: 4px;
+    gap: 4px;
+    border: 1px solid #ad8e575c;
+    border-radius: 4px;
+    background: #17130dcc;
+}
+.theme-choice {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    min-height: 34px;
+    padding: 4px 12px;
+    border: 1px solid transparent;
+    border-radius: 2px;
+    background: transparent;
+    color: var(--muted);
+    font-size: 12px;
+    cursor: pointer;
+    transition: background-color 160ms ease, color 160ms ease;
+}
+.theme-choice:hover { color: var(--ink); background: #ffffff0a; }
+.theme-choice[aria-pressed='true'] { color: var(--gold-light); border-color: #b8995d55; background: #b18d4226; }
+.theme-choice:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.theme-choice .prison-emblem { display: block; width: 16px; height: 16px; }
+.theme-choice-suit { font-family: Georgia, serif; font-size: 18px; line-height: 1; }
+.game-brand > .prison-emblem { display: none; }
+.prison-card-tag { display: none; }
+@media (max-width: 600px) {
+    .theme-choice { gap: 4px; padding: 4px 8px; }
+}
+@media (max-width: 380px) {
+    .table-navigation { flex-wrap: wrap; width: 100%; }
+    .theme-switch { flex-basis: 100%; }
+    .theme-choice { flex: 1; }
+    .table-navigation > .button { flex: 1; }
+}

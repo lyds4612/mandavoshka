@@ -1,0 +1,108 @@
+.App[data-theme='prison'] {
+    --gold: #b99b72;
+    --gold-light: #e9e9da;
+    --ink: #e5eae6;
+    --muted: #b9c5c4;
+    background: linear-gradient(#0b151b26, #0b151b52), #202d32 url('../assets/prison-table.png') center / cover fixed;
+}
+.App[data-theme='prison'] .fleur,
+.App[data-theme='prison'] .corner-ornament { display: none; }
+.App[data-theme='prison'] .game-brand > .prison-emblem { display: block; width: 48px; height: 40px; color: #c2cbca; }
+.App[data-theme='prison'] .game-brand h1 { font-family: 'Bahnschrift', 'Segoe UI', sans-serif; font-weight: 650; letter-spacing: .16em; color: #e1e6e1; text-shadow: 0 2px 4px #0008; }
+.App[data-theme='prison'] .game-brand p { color: #bac7c8; }
+.App[data-theme='prison'] .theme-switch { border-color: #a8b8b855; background: #152127e8; }
+.App[data-theme='prison'] .theme-choice[aria-pressed='true'] { background: #728d9033; border-color: #a7b6b955; color: #eaf2ee; }
+.App[data-theme='prison'] .button-quiet { border-color: #aabbb552; background: #17252bc9; }
+.App[data-theme='prison'] .button-quiet:hover { background: #35464b; }
+.App[data-theme='prison'] .board-frame {
+    border-color: #72817f;
+    background: linear-gradient(130deg, #566462, #202c30 15%, #354445 76%, #64716a);
+    box-shadow: inset 0 0 0 3px #182328, inset 0 0 0 5px #68756d, inset 0 0 0 8px #2b373a, 0 4px 0 #152126, 0 16px 48px #0009;
+}
+.App[data-theme='prison'] .board-frame::before {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    z-index: 6;
+    pointer-events: none;
+    background: radial-gradient(circle at 4px 4px, #88928a 0 2px, #243035 3px 4px, transparent 5px), radial-gradient(circle at calc(100% - 4px) 4px, #88928a 0 2px, #243035 3px 4px, transparent 5px), radial-gradient(circle at 4px calc(100% - 4px), #88928a 0 2px, #243035 3px 4px, transparent 5px), radial-gradient(circle at calc(100% - 4px) calc(100% - 4px), #88928a 0 2px, #243035 3px 4px, transparent 5px);
+}
+.App[data-theme='prison'] #game-board { border-color: #53615e; }
+.App[data-theme='prison'] #game-board::after { opacity: .6; }
+.App[data-theme='prison'] #game-board .cell {
+    font-family: 'Bahnschrift', 'Arial Narrow', sans-serif;
+    font-weight: 650;
+    color: #1c2b2a;
+    background: linear-gradient(130deg, #dde3dc90, #a0aba966);
+    box-shadow: inset 0 0 0 .7px #576760;
+}
+.App[data-theme='prison'] #game-board .cell.jail { background-color: #a2aaa785; color: #863c30; font-family: Georgia, serif; }
+.App[data-theme='prison'] #game-board .cell.home { background-color: color-mix(in srgb, var(--player-accent) 12%, #b7c2b9); }
+.App[data-theme='prison'] #game-board .cell.movable { background-color: #e0d2a4; box-shadow: inset 0 0 0 2px #856129; }
+.App[data-theme='prison'] #game-board .cell.movable:hover { background-color: #eee3bc; box-shadow: inset 0 0 0 3px #88602a; }
+.App[data-theme='prison'] #game-board .cell.selected { background-color: #eed6a0; box-shadow: inset 0 0 0 3px #704b1d; }
+.App[data-theme='prison'] #game-board .cell:focus-visible { outline-color: #704b1d; }
+.App[data-theme='prison'] .board-suit { fill: #253b34; }
+.App[data-theme='prison'] .board-quarter-red .board-suit,
+.App[data-theme='prison'] .board-quarter-orange .board-suit { fill: #833d31; }
+.prison-quarter-label { font: 600 24px 'Bahnschrift', 'Arial Narrow', sans-serif; letter-spacing: 4px; fill: #344640; opacity: .65; }
+.App[data-theme='prison'] .alley-arrow-green { color: #285839; }
+.App[data-theme='prison'] .alley-arrow-red { color: #8f382e; }
+.App[data-theme='prison'] #game-board .cell.prison { background: #394c4e; }
+.App[data-theme='prison'] .cell.prison::before { background: repeating-linear-gradient(90deg, transparent 0 16%, #243c3b15 16% 18%), radial-gradient(circle at 40% 30%, #c0cbc2, #7f928e); }
+.App[data-theme='prison'] .prison-art { color: #2c4641; }
+.App[data-theme='prison'] .prison-art > span { font-family: 'Bahnschrift', sans-serif; font-weight: 650; }
+.App[data-theme='prison'] #game-board .cell.prison.movable { background: #a88443; }
+.App[data-theme='prison'] #game-board .cell.prison.selected { background: #c19c5d; }
+.App[data-theme='prison'] .player-card {
+    border-color: #7f918b;
+    border-radius: 4px;
+    background: linear-gradient(145deg, #344447ef, #18282ced), url('../assets/paper-grain.svg');
+    box-shadow: inset 0 0 0 3px #19282c, inset 0 0 0 4px #5e706b, 0 8px 24px #0007;
+}
+.App[data-theme='prison'] .player-card::after {
+    content: '';
+    position: absolute;
+    inset: 8px;
+    pointer-events: none;
+    background: radial-gradient(circle at 1px 1px, #a5b0a1 0 1px, transparent 2px), radial-gradient(circle at calc(100% - 1px) 1px, #a5b0a1 0 1px, transparent 2px), radial-gradient(circle at 1px calc(100% - 1px), #a5b0a1 0 1px, transparent 2px), radial-gradient(circle at calc(100% - 1px) calc(100% - 1px), #a5b0a1 0 1px, transparent 2px);
+}
+.App[data-theme='prison'] .player-card.is-active { border-color: #c3c7a3; box-shadow: inset 0 0 0 3px #19282c, inset 0 0 0 4px #a8ad88, 0 0 24px #a7b29724, 0 8px 24px #0007; }
+.App[data-theme='prison'] .player-card.is-disconnected { border-color: #db826a; box-shadow: inset 0 0 0 3px #19282c, inset 0 0 0 4px #db826a80, 0 0 0 2px #db826a33, 0 8px 24px #0007; }
+.App[data-theme='prison'] .prison-card-tag { display: block; position: absolute; top: -8px; left: 50%; transform: translateX(-50%); padding: 0 8px; background: #27393c; color: #bac6bf; font: 10px/16px 'Consolas', monospace; letter-spacing: .08em; white-space: nowrap; }
+.App[data-theme='prison'] .player-card h2 { font-family: 'Bahnschrift', 'Arial Narrow', sans-serif; font-size: 18px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: #e5e8db; }
+.App[data-theme='prison'] .player-avatar { position: relative; border: 2px solid #73847b; border-radius: 2px; background: linear-gradient(150deg, #4a5b5555, #0e1f26); box-shadow: 0 0 0 3px #17262a, 0 0 0 4px #7e8e8755; }
+.App[data-theme='prison'] .player-avatar::after { content: ''; position: absolute; inset: 0; pointer-events: none; background: repeating-linear-gradient(90deg, transparent 0 17%, #11212bcc 17% 20%, #a1aca755 20% 21%), linear-gradient(0deg, #192a32bb 0 6%, transparent 6% 94%, #192a32bb 94%); }
+.App[data-theme='prison'] .piece { border-color: color-mix(in srgb, var(--player-light) 65%, #e6e6d0); background: radial-gradient(circle at 34% 25%, var(--player-light), var(--player-accent) 50%, var(--player-dark)); box-shadow: inset 0 0 0 3px #18272d44, inset 0 1px 3px #e8f1dd66, 0 2px 4px #0008; }
+.App[data-theme='prison'] .player-stats,
+.App[data-theme='prison'] .player-details,
+.App[data-theme='prison'] .player-turn-state,
+.App[data-theme='prison'] .player-stats strong span { color: #bac8c2; }
+.App[data-theme='prison'] .player-stats strong { color: #e6e8dc; }
+.App[data-theme='prison'] .is-active .player-turn-state { color: #e1d4a1; }
+.App[data-theme='prison'] .turn-panel { border-color: #647a725c; border-top-color: #9aac997e; border-radius: 4px; background: linear-gradient(135deg, #2b3a3df5, #192b30f2); box-shadow: inset 0 1px #dbe4d31a, 0 8px 24px #0005; }
+.App[data-theme='prison'] .turn-player { font-family: 'Bahnschrift', 'Segoe UI', sans-serif; }
+.App[data-theme='prison'] .turn-message { color: #ccd9d1; }
+.App[data-theme='prison'] .moves-left { border-color: #91a49855; color: #bacdc5; }
+.App[data-theme='prison'] .button-primary,
+.App[data-theme='prison'] .button-gold { border-color: #d5c293; color: #263129; background: linear-gradient(#d6c494, #a59467); box-shadow: inset 0 1px #f3e9beaa, 0 2px 4px #0006; }
+.App[data-theme='prison'] .button-primary:hover:enabled,
+.App[data-theme='prison'] .button-gold:hover { background: linear-gradient(#e4d5ad, #b4a378); }
+.App[data-theme='prison'] .button-secondary { background: #374b4b; border-color: #81938b55; color: #dbe3d9; }
+.App[data-theme='prison'] .button-secondary:hover:enabled { background: #4d6460; border-color: #9bae9e; }
+.App[data-theme='prison'] .selection-hint,
+.App[data-theme='prison'] .skip-animation { color: #b8ccc5; }
+.App[data-theme='prison'] .fallback-die-face { background: linear-gradient(135deg, #e5e9de, #b6c4bb); border-color: #7b8d82; }
+.App[data-theme='prison'] .fallback-pip { background: #223a36; }
+.App[data-theme='prison'] .table-footer { color: #b8c7c1; }
+.App[data-theme='prison'] .table-footer > span { color: #d6d9bb; }
+.App[data-theme='prison'] .table-footer i { background: #9eac95; }
+.App[data-theme='prison'] .rules-dialog { color: var(--ink); border-color: #81978d; background: linear-gradient(140deg, #2e4143, #1b2d33); }
+.App[data-theme='prison'] .rules-content h2 { font-family: 'Bahnschrift', 'Segoe UI', sans-serif; font-weight: 600; }
+.App[data-theme='prison'] .rules-note { background: #e0edda09; color: #bdccc7; }
+.App[data-theme='prison'] .dialog-close { border-color: #899f9466; }
+@media (max-width: 600px) {
+    .App[data-theme='prison'] .game-brand > .prison-emblem { width: 32px; height: 32px; }
+    .App[data-theme='prison'] .player-card h2 { font-size: 14px; }
+    .App[data-theme='prison'] .prison-card-tag { font-size: 9px; }
+}

@@ -1,4 +1,4 @@
-import { TILE_TYPES, findPrisonTileIndex }    from './utils/tileUtils';
+import { TILE_TYPES, findPrisonTileIndex }    from './utils/tileUtils.js';
 
 const consoleWrapper = (text) => {
     console.log(`%c[MDEV] %c${text}`, "color: orange", "color: initial")
@@ -264,9 +264,11 @@ const createInitialPlayers = (colors) =>  {
     return {players, pieces}
 }
 
-export const createInitialGameState = () => {
+export const createInitialGameState = (activeColors = PLAYER_COLORS) => {
     const tiles = createBaseTiles(OUTER_LAYER_TILES_COUNT);
-    const {players, pieces} = createInitialPlayers(PLAYER_COLORS);
+    const { players: allPlayers, pieces: allPieces } = createInitialPlayers(PLAYER_COLORS);
+    const players = allPlayers.filter(player => activeColors.includes(player.color));
+    const pieces = Object.fromEntries(players.map(player => [player.color, allPieces[player.color]]));
 
     const innerLayer = createInnerLayerIndexes();
     const outerLayer = createOuterLayerIndexes();
@@ -275,7 +277,8 @@ export const createInitialGameState = () => {
     appendPrisonTile(tiles);
     applyJails(tiles, JAILS);
     applyAlleys(tiles);
-    const homeTilePositions = appendHomeTiles(tiles, players);
+    // Keep the board and each colour's start/home indexes stable for every roster.
+    const homeTilePositions = appendHomeTiles(tiles, allPlayers);
 
     const tileIndexes = buildTileIndexes({
         outerLayer,

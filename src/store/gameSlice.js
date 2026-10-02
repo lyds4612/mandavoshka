@@ -1,6 +1,6 @@
 import { createSlice, nanoid } from '@reduxjs/toolkit';
 
-import { createInitialGameState, OUTER_LAYER_TILES_COUNT } from './gameBoardInit';
+import { createInitialGameState, OUTER_LAYER_TILES_COUNT } from './gameBoardInit.js';
 import {
     calculateOrdinaryMove,
     getPieceProgress,
@@ -8,10 +8,10 @@ import {
     isPieceInJail,
     isPieceInPrison,
     isWinningPosition,
-} from './logic/gameRules';
-import { consumeMoveValue, settleTurnState } from './logic/turnLogic';
-import { rollDice as rollPairDice, createMoveQueue } from './utils/diceUtils';
-import { findPlayerPieceOnTile, moveCapturedOpponentsToPrison } from './utils/pieceUtils';
+} from './logic/gameRules.js';
+import { consumeMoveValue, settleTurnState } from './logic/turnLogic.js';
+import { rollDice as rollPairDice, createMoveQueue } from './utils/diceUtils.js';
+import { findPlayerPieceOnTile, moveCapturedOpponentsToPrison } from './utils/pieceUtils.js';
 
 const initialState = createInitialGameState();
 
@@ -98,6 +98,9 @@ const gameSlice = createSlice({
     name: 'game',
     initialState,
     reducers: {
+        receiveRemoteState(state, { payload }) {
+            return payload;
+        },
         rollDice: {
             prepare: () => ({ payload: { id: nanoid(), values: rollPairDice() } }),
             reducer(state, { payload }) {
@@ -132,14 +135,15 @@ const gameSlice = createSlice({
             settleTurnState(state);
         },
 
-        placePiece(state) {
+        placePiece(state, { payload: pieceIndex }) {
             if (!state.canPlace || state.winner) {
                 return;
             }
 
             const player = currentPlayer(state);
-            const piece = state.pieces[player.color].find((candidate) => candidate.tile === null);
-            if (!piece || !consumeMoveValue(state, 6)) {
+            const piece = pieceIndex === undefined ? state.pieces[player.color].find((candidate) => candidate.tile === null)
+                : Number.isInteger(pieceIndex) ? state.pieces[player.color][pieceIndex] : null;
+            if (!piece || piece.tile !== null || !consumeMoveValue(state, 6)) {
                 return;
             }
 
@@ -150,7 +154,8 @@ const gameSlice = createSlice({
             settleTurnState(state);
         },
 
-        movePiece(state, { payload: tileIndex }) {
+        movePiece(state, { payload }) {
+            const { tileIndex, pieceIndex } = typeof payload === 'object' && payload !== null ? payload : { tileIndex: payload };
             if (!state.canMove || state.winner) {
                 return;
             }
@@ -160,6 +165,7 @@ const gameSlice = createSlice({
                 pieces: state.pieces,
                 playerColor: player.color,
                 tileIndex,
+                pieceIndex,
             });
             const requiredMove = piece ? getRequiredMoveForPiece(state, piece, player) : null;
 
@@ -187,5 +193,5 @@ const gameSlice = createSlice({
     },
 });
 
-export const { rollDice, finishDiceRoll, placePiece, movePiece, resetGame } = gameSlice.actions;
+export const { rollDice, finishDiceRoll, placePiece, movePiece, resetGame, receiveRemoteState } = gameSlice.actions;
 export default gameSlice.reducer;

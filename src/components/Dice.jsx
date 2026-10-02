@@ -5,9 +5,9 @@ import { finishDiceRoll } from '../store/gameSlice';
 import { selectDice, selectDiceRoll, selectIsRolling, selectMoves } from '../store/selectors/gameSelectors';
 import { createDiceScene } from './dice/createDiceScene';
 import { DICE_FACES, PIP_POSITIONS } from './dice/diceFaces';
+import { DICE_ROLL_DURATION, REPEAT_ROLL_DURATION } from '../shared/animationTiming.js';
 
-export const DICE_ROLL_DURATION = 1400;
-const REPEAT_ROLL_DURATION = 1100;
+export { DICE_ROLL_DURATION };
 
 const useReducedMotion = () => {
     const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
@@ -50,34 +50,7 @@ const FallbackDice = ({ roll, isRolling, availableDice, currentIndex, duration, 
     </div>
 );
 
-export const DiceResult = () => {
-    const roll = useSelector(selectDiceRoll);
-    const isRolling = useSelector(selectIsRolling);
-    const dice = useSelector(selectDice);
-    const moves = useSelector(selectMoves);
-    const currentIndex = dice.indexOf(moves[0]);
-
-    return (
-        <div className="dice-result" role="status" aria-live="polite" aria-atomic="true">
-            {isRolling ? <span className="dice-flight-status">Кубики летят на доску…</span> : roll ? (
-                <>
-                    <span className="dice-result-label">Бросок {roll.playerColor}:</span>
-                    {roll.values.map((value, index) => (
-                        <span
-                            key={index}
-                            className={`dice-value ${dice[index] === null ? 'is-used' : ''} ${index === currentIndex ? 'is-current' : ''}`}
-                            aria-label={`Кубик ${index + 1}: ${value}${dice[index] === null ? ', использован' : index === currentIndex ? ', следующий ход' : ''}`}
-                        >
-                            {value}{dice[index] === null && <span aria-hidden="true"> ✓</span>}
-                        </span>
-                    ))}
-                </>
-            ) : <span className="dice-result-label">Кубики падают прямо на поле</span>}
-        </div>
-    );
-};
-
-const Dice = () => {
+const Dice = ({ visualTheme = 'classic' }) => {
     const dispatch = useDispatch();
     const roll = useSelector(selectDiceRoll);
     const isRolling = useSelector(selectIsRolling);
@@ -87,7 +60,11 @@ const Dice = () => {
     const container = useRef(null);
     const scene = useRef(null);
     const [supportsWebGL, setSupportsWebGL] = useState(true);
-    const duration = reducedMotion ? 180 : roll?.sequence > 3 ? REPEAT_ROLL_DURATION : DICE_ROLL_DURATION;
+    const duration = reducedMotion ? 180 : roll?.duration ?? (roll?.sequence > 3 ? REPEAT_ROLL_DURATION : DICE_ROLL_DURATION);
+    const rollId = roll?.id;
+    const firstValue = roll?.values[0];
+    const secondValue = roll?.values[1];
+    const startedAt = roll?.startedAt;
     const currentIndex = dice.indexOf(moves[0]);
 
     useEffect(() => {
@@ -100,16 +77,18 @@ const Dice = () => {
     }, []);
 
     useEffect(() => {
-        if (!roll) { scene.current?.clear(); return; }
-        if (!isRolling) { scene.current?.finish(); return; }
+        if (!rollId) { scene.current?.clear(); return; }
+        const values = [firstValue, secondValue];
+        if (!isRolling) { scene.current?.roll(values, rollId, 0, true); scene.current?.finish(); return; }
 
-        scene.current?.roll(roll.values, roll.id, duration, reducedMotion);
+        const remaining = startedAt ? Math.max(1, duration - Math.max(0, Date.now() - startedAt)) : duration;
+        scene.current?.roll(values, rollId, remaining, reducedMotion);
         // The clock also completes a throw in a background tab where animation frames pause.
-        const timeout = window.setTimeout(() => dispatch(finishDiceRoll(roll.id)), duration);
+        const timeout = window.setTimeout(() => dispatch(finishDiceRoll(rollId)), remaining);
         return () => { window.clearTimeout(timeout); scene.current?.stop(); };
-    }, [dispatch, roll, isRolling, duration, reducedMotion]);
+    }, [dispatch, rollId, firstValue, secondValue, startedAt, isRolling, duration, reducedMotion]);
 
-    useEffect(() => { scene.current?.updateState(dice, currentIndex, isRolling); }, [dice, currentIndex, isRolling]);
+    useEffect(() => { scene.current?.updateState(dice, currentIndex, isRolling, visualTheme); }, [dice, currentIndex, isRolling, visualTheme]);
 
     return (
         <div

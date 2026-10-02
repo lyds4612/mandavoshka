@@ -188,12 +188,13 @@ export const createDiceScene = (container, onContextLost) => {
             dice.forEach(({ group }) => { group.visible = false; });
             render();
         },
-        updateState(availableDice, currentIndex, isRolling) {
+        updateState(availableDice, currentIndex, isRolling, visualTheme = 'classic') {
+            const prison = visualTheme === 'prison';
             dice.forEach(({ material, pipMaterial }, index) => {
                 const used = !isRolling && availableDice[index] === null;
-                material.color.setHex(used ? 0xb7b5b0 : 0xfff5dc);
-                pipMaterial.color.setHex(used ? 0x666a70 : 0x172431);
-                material.emissive.setHex(index === currentIndex && !isRolling ? 0x533200 : 0x000000);
+                material.color.setHex(used ? (prison ? 0x87958c : 0xb7b5b0) : (prison ? 0xe2e7d9 : 0xfff5dc));
+                pipMaterial.color.setHex(used ? 0x666a70 : (prison ? 0x243a32 : 0x172431));
+                material.emissive.setHex(index === currentIndex && !isRolling ? (prison ? 0x39432a : 0x533200) : 0x000000);
                 material.emissiveIntensity = 0.25;
             });
             if (frame === null) render();

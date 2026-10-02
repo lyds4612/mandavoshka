@@ -1,5 +1,5 @@
-import { OUTER_LAYER_TILES_COUNT } from '../gameBoardInit';
-import { TILE_TYPES } from '../utils/tileUtils';
+import { OUTER_LAYER_TILES_COUNT } from '../gameBoardInit.js';
+import { TILE_TYPES } from '../utils/tileUtils.js';
 
 export const LAST_HOME_PROGRESS = OUTER_LAYER_TILES_COUNT + 3;
 
@@ -108,6 +108,34 @@ export const getRequiredMoveForPiece = (state, piece, player) => {
 
 export const canPieceMove = (state, piece, player) =>
     getRequiredMoveForPiece(state, piece, player) !== null;
+
+// A preview follows the same next die and automatic transfers as the actual move.
+export const getPieceMovePreview = (state, piece, player) => {
+    if (state.winner || state.isRolling) return null;
+    if (isPieceInHand(piece)) {
+        return state.canPlace ? { action: 'place', tile: player.start, path: [player.start], targets: [player.start] } : null;
+    }
+    if (!state.canMove || getRequiredMoveForPiece(state, piece, player) === null) return null;
+    if (isPieceInPrison(state, piece)) {
+        const tile = state.moves.filter(value => value === 6).length >= 2 ? player.start : null;
+        return { action: 'move', tile, path: [tile], targets: tile === null ? [] : [tile] };
+    }
+    if (isPieceInJail(state, piece)) {
+        const jail = state.tiles[piece.tile];
+        const tile = jail.nextTile ?? jail.exitTile;
+        return { action: 'move', tile, path: [tile], targets: [tile] };
+    }
+    const destination = calculateOrdinaryMove({ state, piece, player, moveValue: state.moves[0] });
+    const progress = getPieceProgress(state, piece, player);
+    const path = Array.from({ length: state.moves[0] }, (_, index) => {
+        const next = progress + index + 1;
+        return next >= OUTER_LAYER_TILES_COUNT ? player.home[next - OUTER_LAYER_TILES_COUNT]
+            : (player.start + next) % OUTER_LAYER_TILES_COUNT;
+    });
+    const landingTile = path[path.length - 1];
+    if (landingTile !== destination.tile) path.push(destination.tile);
+    return { action: 'move', tile: destination.tile, path, targets: [...new Set([landingTile, destination.tile])] };
+};
 
 export const calculateActionFlags = (state) => {
     if (state.winner || state.isRolling) {

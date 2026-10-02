@@ -1,5 +1,6 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { canPieceMove } from '../logic/gameRules';
+import { canPieceMove } from '../logic/gameRules.js';
+import { canControlGame } from '../multiplayerSlice.js';
 
 export const selectGameState = (state) => state.game;
 export const selectTileIndexes = (state) => state.game.tileIndexes;
@@ -25,18 +26,18 @@ export const selectCurrentPlayerPieces = createSelector(
 );
 
 export const selectActionFlags = createSelector(
-    [selectGameState],
-    (game) => ({
-        canRoll: game.canRoll,
-        canMove: game.canMove,
-        canPlace: game.canPlace,
+    [selectGameState, canControlGame],
+    (game, canControl) => ({
+        canRoll: game.canRoll && canControl,
+        canMove: game.canMove && canControl,
+        canPlace: game.canPlace && canControl,
     })
 );
 
 export const selectMovableTileIndexes = createSelector(
-    [selectGameState, selectCurrentPlayer],
-    (game, currentPlayer) => game.pieces[currentPlayer.color]
+    [selectGameState, selectCurrentPlayer, canControlGame],
+    (game, currentPlayer, canControl) => canControl ? game.pieces[currentPlayer.color]
         .filter((piece) => canPieceMove(game, piece, currentPlayer))
         .map((piece) => piece.tile)
-        .filter((tileIndex, index, tileIndexes) => tileIndexes.indexOf(tileIndex) === index),
+        .filter((tileIndex, index, tileIndexes) => tileIndexes.indexOf(tileIndex) === index) : [],
 );
