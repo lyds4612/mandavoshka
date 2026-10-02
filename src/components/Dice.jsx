@@ -1,10 +1,11 @@
 import React from 'react';
 import './Dice.css';
 import {useSelector} from "react-redux";
+import { selectDice, selectMoves } from '../store/selectors/gameSelectors';
 
 const Dice = () => {
-    const dice = useSelector((state) => state.game.dice);
-    const moves = useSelector((state) => state.game.moves);
+    const dice = useSelector(selectDice);
+    const moves = useSelector(selectMoves);
 
     const bestMove = moves[0];
     const bestMoveIndex = dice.indexOf(bestMove);

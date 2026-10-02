@@ -1,3 +1,4 @@
+import { TILE_TYPES, findPrisonTileIndex }    from './utils/tileUtils';
 
 const consoleWrapper = (text) => {
     console.log(`%c[MDEV] %c${text}`, "color: orange", "color: initial")
@@ -11,6 +12,28 @@ const DOWN = [0, 1];
 const UP = [0, -1];
 
 const SIDE_SIZE = 12;
+const OUTER_LAYER_TILES_COUNT = SIDE_SIZE * 4;
+const INNER_LAYER_TILES_COUNT = 3 * 4;
+const INNER_LAYER_SIDE = SIDE_SIZE - 2;
+const INNER_LAYER_OFFSET = 1;
+const INNER_LAYER_JUMP = 8;
+const PIECES_PER_PLAYER = 4;
+const PLAYER_COLORS = ['green', 'black', 'red', 'orange'];
+
+const JAILS = {
+    9: {
+        tiles: [59, 58, 57]
+    },
+    21: {
+        tiles: [56, 55, 54]
+    },
+    33: {
+        tiles: [53, 52, 51]
+    },
+    45: {
+        tiles: [50, 49, 48]
+    }
+};
 
 export const createInitialPlayerState = (state) => {
     state.dice = [null, null];
@@ -64,9 +87,110 @@ const calculateBoardIndexes = (options) => {
     return indexes;
 }
 
+const createBaseTiles = (count) => {
+    return Array(count)
+        .fill(null)
+        .map((_, i) => ({
+            index: i,
+            name: TILE_TYPES.freedom,
+        }));
+};
+
+const appendJailTiles = (tiles, count) => {
+    for (let i = 0; i < count; i += 1) {
+        tiles.push({
+            index: tiles.length,
+            name: TILE_TYPES.jail,
+        });
+    }
+};
+
+const appendPrisonTile = (tiles) => {
+    tiles.push({
+        index: tiles.length,
+        name: TILE_TYPES.prison,
+    });
+};
+
+const createInnerLayerIndexes = () => {
+    return calculateBoardIndexes({
+        initialMove: DOWN,
+        side: INNER_LAYER_SIDE,
+        max: INNER_LAYER_TILES_COUNT,
+        gridOffset: INNER_LAYER_OFFSET,
+        rotate(pos, move) {
+            if (move[0] === 0 && move[1] === 1) {
+                move = RIGHT;
+                pos[1] += INNER_LAYER_JUMP;
+                pos[0] -= 1;
+            } else if (move[0] === 1 && move[1] === 0) {
+                move = UP;
+                pos[0] += INNER_LAYER_JUMP;
+                pos[1] += 1;
+            } else if (move[0] === 0 && move[1] === -1) {
+                move = LEFT;
+                pos[1] -= INNER_LAYER_JUMP;
+                pos[0] += 1;
+            }
+            return move;
+        },
+        shouldRotate(pos, options, i) {
+            return i === 2 || i === 5 || i === 8 || i === 11;
+        }
+    });
+};
+
+const createOuterLayerIndexes = () => {
+    return calculateBoardIndexes({
+        side: SIDE_SIZE,
+        max: OUTER_LAYER_TILES_COUNT,
+    });
+};
+
+const applyJails = (tiles, jails) => {
+    Object.entries(jails).forEach(([tileEnterIndex, data]) => {
+        tiles[tileEnterIndex].name = TILE_TYPES.jailEnter;
+        tiles[tileEnterIndex].moveTo = data.tiles[0];
+
+        data.tiles.forEach((tileIndex, index) => {
+            tiles[tileIndex].name = TILE_TYPES.jail;
+            tiles[tileIndex].needToRoll = index + 1;
+            if (index === 2) {
+                tiles[tileIndex].moveTo = tileEnterIndex + 2;
+            } 
+        });
+    });
+};
+
+const buildTileIndexes = ({ outerLayer, innerLayer, prisonTileIndex }) => {
+    const indexes = [
+        ...outerLayer,
+        ...innerLayer,
+    ];
+
+    const reversed = {
+        '6, 6': prisonTileIndex,
+    };
+
+    indexes.forEach(([x, y], index) => {
+        reversed[`${x}, ${y}`] = index;
+    });
+
+    return {
+        index: indexes,
+        pos: reversed,
+    };
+};
+
+const logInitialGameMeta = ({ players, tiles, jails }) => {
+    debugLog(`Game created with ${players.length} players and ${tiles.length} tiles`);
+    debugLog(`Starting position for players [${players.map((player) => player.start).join(', ')}]`);
+    debugLog(`Jail entrances: [${JSON.stringify(jails)}]`);
+};
+
 const createInitialPieces = (color) => {
     const pieces = [];
-    for (let i = 0; i < 4; i += 1) {
+    for (let i = 0; i < PIECES_PER_PLAYER; i += 1) {
         pieces.push({
             color,
             tile: null,
@@ -96,122 +220,27 @@ const createInitialPlayers = (colors) =>  {
 }
 
 export const createInitialGameState = () => {
-    const tiles = Array(SIDE_SIZE * 4)
-        .fill(null)
-        .map((_, i) => ({
-            index: i,
-            name: 'freedom',
-        }));
+    const tiles = createBaseTiles(OUTER_LAYER_TILES_COUNT);
+    const {players, pieces} = createInitialPlayers(PLAYER_COLORS);
 
-    const {players, pieces} = createInitialPlayers([
-        'red',
-        'blue',
-        'green',
-        'orange'
-    ])
+    const innerLayer = createInnerLayerIndexes();
+    const outerLayer = createOuterLayerIndexes();
 
-    const innerLayer = calculateBoardIndexes({
-        initialMove: DOWN,
-        side: SIDE_SIZE - 2,
-        max: 3 * 4,
-        gridOffset: 1,
-        rotate(pos, move) {
-            if (move[0] === 0 && move[1] === 1) {
-                move = RIGHT
-                pos[1] += 8
-                pos[0] -= 1
-            }
+    appendJailTiles(tiles, innerLayer.length);
+    appendPrisonTile(tiles);
+    applyJails(tiles, JAILS);
 
-            else if (move[0] === 1 && move[1] === 0) {
-                move = UP
-                pos[0] += 8
-                pos[1] += 1
-            }
+    const tileIndexes = buildTileIndexes({
+        outerLayer,
+        innerLayer,
+        prisonTileIndex: tiles.length - 1,
+    });
 
-            else if (move[0] === 0 && move[1] === -1) {
-                move = LEFT
-                pos[1] -= 8
-                pos[0] += 1
-            }
-            return move;
-        },
-        shouldRotate(pos, options, i) {
-            if (i === 2 || i === 5 || i === 8 || i === 11) {
-                return true
-            }
-        }
-    })
-
-    const outerLayer = calculateBoardIndexes({
-        side: SIDE_SIZE,
-        max: SIDE_SIZE * 4,
-    })
-
-    innerLayer.forEach(() => {
-        tiles.push({
-            index: tiles.length,
-            name: 'jail'
-        })
-    })
-
-    tiles.push({
-        index: tiles.length,
-        name: 'prison'
-    })
-
-    const detentionCenters = {
-        9: {
-            tiles: [59, 58, 57]
-        },
-        21: {
-            tiles: [56, 55, 54]
-        },
-        33: {
-            tiles: [53, 52, 51]
-        },
-        45: {
-            tiles: [50, 49, 48]
-        }   
-    }
-    Object.entries(detentionCenters).forEach(([tileEnterIndex, data]) => {
-        tiles[tileEnterIndex].name = 'detention-center-entrance';
-        
-        data.tiles.forEach((tileIndex, index) => {
-            if (index === 0) {
-                tiles[tileIndex].name = `detention-center-${index}`;
-            } else if (index === 2) {
-                tiles[tileIndex].name = 'detention-center-exit';
-                tiles[tileEnterIndex].moveTo = tileEnterIndex + 2;
-            } else {
-                tiles[tileIndex].name = 'detention-center';
-            }
-        })
-    })
-
-
-
-    const indexes = [
-        ...outerLayer,
-        ...innerLayer,
-    ]
-
-    const reversed = {
-        '6, 6' : tiles.length - 1
-    }
-
-    indexes.forEach(([x, y], index) => {
-        reversed[`${x}, ${y}`] = index;
-    })
-
-    const tileIndexes = {
-        index: indexes,
-        pos: reversed,
-    }
-
-
-    debugLog(`Game created with ${players.length} players and ${tiles.length} tiles`);
-    debugLog(`Starting position for players [${players.map((player) => player.start).join(', ')}]`);
-    debugLog(`Detention center entrances: [${JSON.stringify(detentionCenters)}]`);
+    logInitialGameMeta({
+        players,
+        tiles,
+        jails: JAILS,
+    });
     
     const state = {
         currentPlayerIndex: 0,
@@ -220,6 +249,8 @@ export const createInitialGameState = () => {
         currentPlayer: players[0],
         tileIndexes,
         pieces,
+        prisonTileIndex: findPrisonTileIndex(tiles),
+
     }
 
     createInitialPlayerState(state);
