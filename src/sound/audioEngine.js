@@ -44,11 +44,33 @@ export const synthesizeSound = (context, output, type, at, track = () => {}, str
 export const createAudioEngine = () => {
     let context = null, output = null, enabled = true;
     const voices = new Map();
+    let pending = [];
     const stop = group => {
+        pending = group ? pending.filter(batch => batch.group !== group) : [];
         voices.forEach((sourceGroup, source) => {
             if (group && group !== sourceGroup) return;
             try { source.stop(); } catch { /* Already ended. */ }
             voices.delete(source);
+        });
+    };
+    const flush = () => {
+        if (!enabled || !context || context.state !== 'running' || document.hidden) return;
+        const batches = pending;
+        pending = [];
+        batches.forEach(({ events, group, queuedAt }) => {
+            const elapsed = performance.now() - queuedAt;
+            // Do not replay old moves when a browser finally permits audio.
+            if (elapsed > 250) return;
+            const unique = new Set();
+            events.forEach(({ type, delay = 0, strength }) => {
+                const key = `${type}:${delay}`;
+                if (unique.has(key) || voices.size >= 64) return;
+                unique.add(key);
+                synthesizeSound(context, output, type, context.currentTime + 0.01 + Math.max(0, delay - elapsed) / 1000, source => {
+                    voices.set(source, group);
+                    source.addEventListener('ended', () => voices.delete(source), { once: true });
+                }, strength);
+            });
         });
     };
     const unlock = () => {
@@ -59,8 +81,10 @@ export const createAudioEngine = () => {
             if (!context || context.state === 'closed') {
                 context = new AudioContext(); output = context.createGain();
                 output.gain.value = VOLUME; output.connect(context.destination);
+                context.addEventListener('statechange', flush);
             }
-            if (context.state === 'suspended') context.resume().catch(() => {});
+            if (context.state !== 'running') context.resume().then(flush).catch(() => {});
+            else flush();
         } catch { /* Sound availability never prevents a move. */ }
     };
     return {
@@ -72,21 +96,19 @@ export const createAudioEngine = () => {
             if (!enabled) stop();
         },
         play(events, group = 'pieces') {
-            if (!enabled || !context || context.state !== 'running' || document.hidden) return;
-            const unique = new Set();
-            events.slice(0, 16).forEach(({ type, delay, strength }) => {
-                const key = `${type}:${delay}`;
-                if (unique.has(key) || voices.size >= 64) return;
-                unique.add(key);
-                synthesizeSound(context, output, type, context.currentTime + 0.01 + delay / 1000, source => {
-                    voices.set(source, group);
-                    source.addEventListener('ended', () => voices.delete(source), { once: true });
-                }, strength);
-            });
+            if (!enabled || document.hidden || !events.length) return;
+            unlock();
+            if (!context) return;
+            pending.push({ events: events.slice(0, 16), group, queuedAt: performance.now() });
+            if (pending.length > 32) pending.shift();
+            flush();
         },
         dispose() {
             stop();
-            if (context && context.state !== 'closed') context.close().catch(() => {});
+            if (context) {
+                context.removeEventListener('statechange', flush);
+                if (context.state !== 'closed') context.close().catch(() => {});
+            }
             context = null; output = null;
         },
     };

@@ -17,12 +17,14 @@ export const useGameSounds = ({ game, scope, active, releaseOrigins }) => {
     }, [engine, enabled]);
     useEffect(() => {
         const unlock = () => engine.unlock();
-        const hide = () => { if (document.hidden) engine.stop(); };
-        window.addEventListener('pointerdown', unlock);
-        window.addEventListener('keydown', unlock);
+        const hide = () => { if (document.hidden) engine.stop(); else engine.unlock(); };
+        const gestures = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown'];
+        gestures.forEach(type => window.addEventListener(type, unlock, { capture: true, passive: true }));
+        window.addEventListener('focus', unlock);
         document.addEventListener('visibilitychange', hide);
         return () => {
-            window.removeEventListener('pointerdown', unlock); window.removeEventListener('keydown', unlock);
+            gestures.forEach(type => window.removeEventListener(type, unlock, true));
+            window.removeEventListener('focus', unlock);
             document.removeEventListener('visibilitychange', hide); engine.dispose();
         };
     }, [engine]);
