@@ -5,6 +5,8 @@ import {
     calculateOrdinaryMove,
     getPieceProgress,
     getRequiredMoveForPiece,
+    hasPlayerFinished,
+    isGameOver,
     isPieceInJail,
     isPieceInPrison,
     isWinningPosition,
@@ -30,25 +32,16 @@ const captureOpponentsAt = (state, player, targetTile) => {
     });
 };
 
-const updateWinner = (state, player) => {
-    if (isWinningPosition(state, player)) {
-        state.winner = player.color;
+const recordFinish = (state, player) => {
+    if (!hasPlayerFinished(state, player.color) && isWinningPosition(state, player)) {
+        state.winners ??= [];
+        state.winners.push(player.color);
+        const remaining = state.players.filter(candidate => !hasPlayerFinished(state, candidate.color));
+        if (remaining.length === 1) state.loser = remaining[0].color;
     }
 };
 
-const movePrisonPiece = (state, player, piece) => {
-    const availableSixes = state.moves.filter((move) => move === 6).length;
-
-    if (availableSixes >= 2) {
-        consumeMoveValue(state, 6);
-        consumeMoveValue(state, 6);
-        piece.tile = player.start;
-        piece.progress = 0;
-        captureOpponentsAt(state, player, player.start);
-        state.turnMessage = 'Фишка вышла из тюрьмы прямо на старт.';
-        return;
-    }
-
+const movePrisonPiece = (state, piece) => {
     consumeMoveValue(state, 6);
     piece.tile = null;
     piece.progress = null;
@@ -107,7 +100,7 @@ const gameSlice = createSlice({
         rollDice: {
             prepare: () => ({ payload: { id: nanoid(), values: rollPairDice() } }),
             reducer(state, { payload }) {
-                if (!state.canRoll || state.isRolling || state.winner) {
+                if (!state.canRoll || state.isRolling || isGameOver(state) || hasPlayerFinished(state, currentPlayer(state).color)) {
                     return;
                 }
 
@@ -124,7 +117,7 @@ const gameSlice = createSlice({
         },
 
         finishDiceRoll(state, { payload: rollId }) {
-            if (!state.isRolling || state.diceRoll?.id !== rollId || state.winner) {
+            if (!state.isRolling || state.diceRoll?.id !== rollId || isGameOver(state) || hasPlayerFinished(state, currentPlayer(state).color)) {
                 return;
             }
 
@@ -139,7 +132,7 @@ const gameSlice = createSlice({
         },
 
         placePiece(state, { payload: pieceIndex }) {
-            if (!state.canPlace || state.winner) {
+            if (!state.canPlace || isGameOver(state) || hasPlayerFinished(state, currentPlayer(state).color)) {
                 return;
             }
 
@@ -159,7 +152,7 @@ const gameSlice = createSlice({
 
         movePiece(state, { payload }) {
             const { tileIndex, pieceIndex } = typeof payload === 'object' && payload !== null ? payload : { tileIndex: payload };
-            if (!state.canMove || state.winner) {
+            if (!state.canMove || isGameOver(state) || hasPlayerFinished(state, currentPlayer(state).color)) {
                 return;
             }
 
@@ -178,7 +171,7 @@ const gameSlice = createSlice({
             }
 
             if (isPieceInPrison(state, piece)) {
-                movePrisonPiece(state, player, piece);
+                movePrisonPiece(state, piece);
             } else if (isPieceInJail(state, piece)) {
                 moveJailPiece(state, player, piece);
             } else {
@@ -186,7 +179,7 @@ const gameSlice = createSlice({
                 moveOrdinaryPiece(state, player, piece, requiredMove);
             }
 
-            updateWinner(state, player);
+            recordFinish(state, player);
             settleTurnState(state);
         },
 

@@ -32,11 +32,13 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
     latest.current = { game, available, onAction, onReturn };
 
     const commit = (id, move, origin) => {
+        const selectReturnedPiece = move.tile === null && latest.current.game.moves.filter(value => value === 6).length > 1;
         setSelectedId(null);
         if (origin) releaseOrigins.current.set(id, { ...origin, tile: move.tile });
         const result = latest.current.onAction(move);
         const finish = () => {
             setDrag(null);
+            if (selectReturnedPiece) setSelectedId(id);
             // Server refusals leave the piece in place: return the released token.
             if (releaseOrigins.current.has(id)) {
                 releaseOrigins.current.delete(id);
@@ -64,7 +66,8 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         const blur = () => cancelRef.current();
         window.addEventListener('keydown', escape);
         window.addEventListener('blur', blur);
-        return () => { window.removeEventListener('keydown', escape); window.removeEventListener('blur', blur); cancelAnimationFrame(scrollFrame.current); gesture.current = null; };
+        window.addEventListener('resize', blur);
+        return () => { window.removeEventListener('keydown', escape); window.removeEventListener('blur', blur); window.removeEventListener('resize', blur); cancelAnimationFrame(scrollFrame.current); gesture.current = null; };
     }, []);
 
     const hitTarget = (x, y, move) => {
@@ -149,6 +152,9 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
                 const placementId = pieceId(current.tapPlacement.color, current.tapPlacement.index);
                 const placement = latest.current.available[placementId];
                 if (placement?.action === 'place') commit(placementId, placement);
+            } else if (current.game === latest.current.game) {
+                const move = latest.current.available[current.id];
+                if (move?.piece.tile === latest.current.game.prisonTileIndex) commit(current.id, move);
             }
             return;
         }
@@ -162,8 +168,14 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
             setDrag(null);
         }
     };
-    const onTileClick = tileIndex => {
+    const onTileClick = (tileIndex, clickedPieceId) => {
         const move = Object.entries(available).find(([, value]) => value.piece.tile === tileIndex);
+        if (tileIndex === game.prisonTileIndex) {
+            const prisoner = clickedPieceId ? available[clickedPieceId]
+                : selected?.piece.tile === tileIndex ? selected : move?.[1];
+            if (prisoner?.piece.tile === tileIndex) commit(pieceId(prisoner.color, prisoner.index), prisoner);
+            return;
+        }
         if (selected?.piece.tile === tileIndex) { setSelectedId(null); return; }
         if (move && selected?.action === 'move') { setSelectedId(move[0]); return; }
         if (preview?.targets.includes(tileIndex)) { commit(selectedId ?? pieceId(preview.color, preview.index), preview); return; }
@@ -185,7 +197,8 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         },
         moveSelected: () => { if (selected?.action === 'move') commit(selectedId, selected); },
         hint: drag?.phase === 'waiting' ? 'Подтверждаем ход…' : preview?.tile === null ? 'Верните фишку в руку'
-            : selected ? 'Повторное нажатие отменяет выбор'
+            : selected ? selected.action === 'place' ? 'Нажмите на старт или «На старт»' : 'Повторное нажатие отменяет выбор'
+                : Object.values(available).some(move => move.tile === null) ? 'Нажмите свою фишку в тюрьме — в руку за 6'
                 : placing ? learnedDrag ? 'Нажмите на старт или «На старт»' : 'Нажмите на старт или перетащите фишку'
                     : Object.keys(available).length ? 'Выберите фишку или перетащите её' : 'Для новой фишки нужна шестёрка',
         pointerHandlers: { onPointerDown, onPointerMove, onPointerUp, onPointerCancel: cancel, onLostPointerCapture: () => { if (gesture.current) cancel(); },

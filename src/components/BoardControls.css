@@ -33,14 +33,63 @@
     display: flex; justify-content: center; align-items: center; gap: 8px; height: 36px; padding: 8px 4px;
     border: 1px solid #e1be721a; border-radius: 6px; background: #ffffff06; line-height: 16px; white-space: nowrap;
 }
-.player-turn-state.is-your-turn, .player-turn-state.is-winner {
+.player-turn-state.is-current-turn, .player-turn-state.is-winner {
     border: 1px solid var(--player-light); border-radius: 6px; color: var(--player-dark);
     background: linear-gradient(135deg, var(--player-light), var(--player-accent));
     font: 850 15px/1.15 'Segoe UI', sans-serif; letter-spacing: .07em; text-transform: uppercase;
     box-shadow: 0 0 16px color-mix(in srgb, var(--player-accent) 35%, transparent), inset 0 1px #ffffff55;
 }
 .player-turn-state.is-winner { font-size: 12px; }
-.player-turn-state.is-your-turn::before { content: ''; flex: 0 0 7px; height: 7px; border-radius: 50%; background: currentColor; }
+.App .player-turn-state.is-loser { color: #ffdacb; background: #54251d; border-color: #db826a; font-weight: 700; }
+.game-results {
+    position: absolute; inset: 0; z-index: 13; display: grid; place-items: center; padding: 8px;
+    background: #17110c80; border-radius: inherit;
+}
+.game-results-card {
+    width: min(100%, 400px); max-height: 100%; overflow: auto; padding: 16px; border: 1px solid #f8d484;
+    border-radius: 8px; background: #241d12; color: #f8e8c8; box-shadow: 0 8px 24px #0008; text-align: left;
+}
+.game-results-card h2 { font: 700 clamp(16px, 3cqw, 24px)/1.25 'Segoe UI', sans-serif; }
+.game-results-label { margin-top: 8px; font-size: 12px; color: #e0cda4; }
+.game-results-winners { display: grid; gap: 4px; margin: 4px 0 8px; padding: 0; list-style: none; }
+.game-results-winners li { display: flex; align-items: baseline; gap: 8px; font-size: 14px; line-height: 20px; }
+.game-results-winners li > span { color: #bee081; }
+.game-results-winners strong, .game-results-loser strong { min-width: 0; overflow-wrap: anywhere; }
+.game-results-loser { display: grid; gap: 4px; padding: 8px; border: 1px solid #db826a; border-radius: 4px; background: #54251d; color: #ffdacb; font-size: 14px; line-height: 20px; }
+.game-results-loser > span { font-size: 12px; }
+.game-results-card .results-restart { margin-top: 8px; min-height: 44px; }
+.game-results-waiting { margin-top: 8px; color: #e0cda4; font-size: 12px; line-height: 16px; }
+.App[data-theme='prison'] .game-results-card { background: #1b2c32; border-radius: 4px; }
+.player-turn-state.is-current-turn {
+    color: #241d12; background: #f8d484; border-color: #ffe5ac; font-size: 14px; font-weight: 700;
+    letter-spacing: 0; box-shadow: inset 0 1px #fff5d6, 0 4px 8px #0004;
+}
+.player-turn-state.is-current-turn::before { content: '▶'; font-size: 10px; }
+.App .player-card.is-active {
+    border-color: #ffe5ac; outline: 3px solid #f8d484; outline-offset: 4px;
+    box-shadow: inset 0 0 0 3px #211d14, inset 0 0 0 4px #f8d484, 0 8px 24px #0008;
+}
+.player-current-turn-badge {
+    position: absolute; top: -16px; left: 50%; transform: translateX(-50%); z-index: 1;
+    display: flex; align-items: center; justify-content: center; gap: 8px; padding: 4px 8px;
+    border: 1px solid #ffe5ac; border-radius: 4px; background: #f8d484; color: #241d12;
+    font: 700 12px/16px 'Segoe UI', sans-serif; text-transform: uppercase; white-space: nowrap;
+    box-shadow: 0 4px 8px #0004;
+}
+.player-current-turn-badge > span { font-size: 10px; }
+.player-card.is-active > .player-crest, .App[data-theme='prison'] .player-card.is-active > .prison-card-tag { display: none; }
+.table-turn-status {
+    display: flex; align-items: center; gap: 8px; min-width: 0; max-width: 280px; flex: 1;
+    padding: 8px 16px; border: 1px solid #ffe5ac; border-radius: 8px;
+    color: #f8d484; background: #241d12; box-shadow: 0 4px 8px #0004;
+}
+.table-turn-suit { font: 24px/1 Georgia, serif; flex-shrink: 0; }
+.table-turn-status > div { min-width: 0; }
+.table-turn-label { display: block; color: #e0cda4; font-size: 12px; line-height: 16px; }
+.table-turn-status strong { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 16px; line-height: 24px; }
+.sound-toggle { width: 44px; height: 44px; flex-shrink: 0; justify-content: center; padding: 8px; }
+.sound-toggle svg { flex-shrink: 0; }
+.sound-toggle-label { display: none; }
 .player-turn-details { grid-column: 1 / -1; height: 40px; margin-top: 8px; padding-top: 8px; border-top: 1px solid #d2b47733; }
 .player-turn-details[aria-hidden='true'] { border-color: transparent; }
 .player-play-hint { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; overflow: hidden; font-size: 11px; line-height: 16px; margin: 0; color: var(--muted); }
@@ -48,14 +97,22 @@
 .App[data-theme='prison'] .board-roll-cue { border-color: #758675; background: radial-gradient(circle at 40% 25%, #e5e8d9, #b0b996); box-shadow: 0 0 0 3px #52685540, 0 0 28px #cedfb455; }
 .App[data-theme='prison'] .board-roll-cue strong { font-family: 'Bahnschrift', 'Segoe UI', sans-serif; }
 .App[data-theme='prison'] .board-skip-control { border-color: #81998b; color: #e3ead7; background: #223739ed; }
-.App[data-theme='prison'] .player-turn-state.is-your-turn, .App[data-theme='prison'] .player-turn-state.is-winner { color: var(--player-dark); border-radius: 3px; }
+.App[data-theme='prison'] .player-turn-state.is-current-turn { color: #241d12; border-radius: 3px; }
+.App[data-theme='prison'] .player-turn-state.is-winner { color: var(--player-dark); border-radius: 3px; }
+.App[data-theme='prison'] .table-turn-status { background: #1b2c32; border-radius: 4px; }
 @keyframes board-roll-pulse { 0%, 100% { filter: brightness(1); } 50% { filter: brightness(1.06); } }
 @keyframes board-roll-blink { 0%, 100% { opacity: 1; } 50% { opacity: .55; } }
 @media (min-width: 981px) { .player-avatar { width: 72px; } }
+@media (min-width: 981px) and (max-width: 1100px) {
+    .table-header { gap: 16px; }
+    .game-brand { gap: 8px; }
+    .game-brand h1 { font-size: 20px; }
+    .game-brand > .fleur, .App[data-theme='prison'] .game-brand > .prison-emblem { width: 32px; }
+}
 @media (max-height: 850px) and (min-width: 981px) { .player-avatar { width: 64px; } }
 @media (max-width: 600px) {
     .player-turn-state { height: 32px; }
-    .player-turn-state.is-your-turn, .player-turn-state.is-winner { font-size: 12px; }
+    .player-turn-state.is-current-turn, .player-turn-state.is-winner { font-size: 12px; }
 }
 @media (prefers-reduced-motion: reduce) { .board-roll-cue, .board-roll-cue > * { animation: none; } }
 .board-connection-pause {

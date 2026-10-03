@@ -39,7 +39,9 @@ const MultiplayerPanel = ({ expanded = false }) => {
     const statusMessage = network.status === 'error' ? 'Не удалось восстановить сеанс. Выйдите и войдите в комнату заново.'
         : !connected ? 'Связь потеряна. Переподключаемся…'
         : room?.phase === 'waiting' ? waitingMessage
-        : room?.paused ? 'Партия приостановлена: ждём отключившихся игроков.' : 'Ходы и броски синхронизируются у всех игроков.';
+        : room?.players.some(player => player.result === 'loser') ? 'Партия завершена. Победители и тот, кто не успел, показаны на поле.'
+        : room?.paused ? 'Партия приостановлена: ждём отключившихся игроков.'
+        : me?.result === 'winner' ? 'Вы победили. Можно наблюдать, пока остальные доигрывают.' : 'Ходы и броски синхронизируются у всех игроков.';
     const nicknameField = <label>Ваш ник<input className="online-name" autoComplete="nickname" maxLength={24}
         autoFocus={invited} value={name} onChange={event => setName(event.target.value)} placeholder="Как вас зовут?" required disabled={network.pending} /></label>;
     const invite = new URL(window.location.href);
@@ -111,7 +113,7 @@ const MultiplayerPanel = ({ expanded = false }) => {
                                     {character && <CharacterPortrait character={character} className="online-player-portrait" />}
                                     <div className="online-player-copy"><span className="online-player-name"><span className="online-player-suit" style={{ color: PLAYER_THEMES[color].light }} aria-hidden="true">{PLAYER_THEMES[color].suit}</span> {player?.name ?? 'Свободное место'}{player?.id === room.hostId ? ' · хозяин' : ''}</span>
                                     {character && <span className="online-player-character" title={character.name}>{character.title}</span>}
-                                    <span className="online-seat-status">{player ? isConnected(player) ? 'в сети' : 'отключился · место сохранено' : connectedCount < MIN_ROOM_PLAYERS ? 'пригласите друга' : 'можно пригласить ещё'}</span>
+                                    <span className="online-seat-status">{player ? `${player.result === 'winner' ? 'победитель · ' : player.result === 'loser' ? 'не успел · ' : ''}${isConnected(player) ? 'в сети' : 'отключился · место сохранено'}` : connectedCount < MIN_ROOM_PLAYERS ? 'пригласите друга' : 'можно пригласить ещё'}</span>
                                     </div>
                                 </li>;
                             })}

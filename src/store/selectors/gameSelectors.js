@@ -1,5 +1,5 @@
 import { createSelector } from '@reduxjs/toolkit';
-import { canPieceMove } from '../logic/gameRules.js';
+import { canPieceMove, isGameOver } from '../logic/gameRules.js';
 import { canControlGame } from '../multiplayerSlice.js';
 
 export const selectGameState = (state) => state.game;
@@ -12,7 +12,10 @@ export const selectDiceRoll = (state) => state.game.diceRoll;
 export const selectIsRolling = (state) => state.game.isRolling;
 export const selectMoves = (state) => state.game.moves;
 export const selectCurrentPlayer = (state) => state.game.players[state.game.currentPlayerIndex];
-export const selectWinner = (state) => state.game.winner;
+const EMPTY_WINNERS = [];
+export const selectWinners = (state) => state.game.winners ?? EMPTY_WINNERS;
+export const selectLoser = (state) => state.game.loser;
+export const selectGameOver = (state) => isGameOver(state.game);
 export const selectTurnMessage = (state) => state.game.turnMessage;
 
 export const selectCurrentPlayerColor = createSelector(

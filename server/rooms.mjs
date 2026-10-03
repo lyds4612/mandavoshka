@@ -1,7 +1,7 @@
 import { createHash, randomBytes, randomInt, randomUUID } from 'node:crypto';
 import gameReducer, { rollDice, finishDiceRoll, movePiece, placePiece } from '../src/store/gameSlice.js';
 import { createInitialGameState, PLAYER_COLORS } from '../src/store/gameBoardInit.js';
-import { canPieceMove } from '../src/store/logic/gameRules.js';
+import { canPieceMove, hasPlayerFinished, isGameOver } from '../src/store/logic/gameRules.js';
 import { createInviteOriginResolver } from './inviteOrigin.mjs';
 import { DICE_ROLL_DURATION, REPEAT_ROLL_DURATION } from '../src/shared/animationTiming.js';
 import { MIN_ROOM_PLAYERS, MAX_ROOM_PLAYERS } from '../src/shared/multiplayerConfig.js';
@@ -40,8 +40,9 @@ export const registerRooms = (io, {
     const cancel = timer => { clearTimeout(timer); timers.delete(timer); };
     const snapshot = room => ({
         code: room.code, revision: room.revision, phase: room.phase, hostId: room.hostId,
-        paused: room.phase === 'playing' && room.players.some(player => !player.socketId),
-        players: room.players.map(({ id, name, characterId, color, socketId, disconnectedAt }) => ({ id, name, characterId, color, connected: Boolean(socketId), disconnectedAt: disconnectedAt ?? null })),
+        paused: room.phase === 'playing' && !isGameOver(room.game) && room.players.some(player => !player.socketId && !hasPlayerFinished(room.game, player.color)),
+        players: room.players.map(({ id, name, characterId, color, socketId, disconnectedAt }) => ({ id, name, characterId, color, connected: Boolean(socketId), disconnectedAt: disconnectedAt ?? null,
+            result: hasPlayerFinished(room.game, color) ? 'winner' : room.game.loser === color ? 'loser' : null })),
         notice: room.notice ?? null,
         game: room.game,
     });
@@ -190,6 +191,12 @@ export const registerRooms = (io, {
             const { room, player } = getMembership(socket);
             setNotice(room, player, 'left');
             cancel(player.disconnectTimer);
+            if (room.phase === 'playing' && (hasPlayerFinished(room.game, player.color) || isGameOver(room.game))) {
+                player.socketId = null; player.disconnectedAt = Date.now();
+                socket.leave(room.code); delete socket.data.roomCode; delete socket.data.playerId;
+                transferHost(room); publish(room);
+                return {};
+            }
             room.players = room.players.filter(member => member.id !== player.id);
             socket.leave(room.code); delete socket.data.roomCode; delete socket.data.playerId;
             if (room.players.length === 0) { cancel(room.rollTimer); rooms.delete(room.code); }
@@ -203,8 +210,9 @@ export const registerRooms = (io, {
             const key = `${player.id}:${command.id}`;
             if (room.seen.has(key)) return { snapshot: snapshot(room), duplicate: true };
             if (room.phase !== 'playing') fail('NOT_STARTED', 'Партия ещё не началась.');
-            if (room.players.some(member => !member.socketId)) fail('PAUSED', 'Ждём подключения всех игроков.');
-            if (room.game.winner) fail('GAME_FINISHED', 'Партия завершена.');
+            if (isGameOver(room.game)) fail('GAME_FINISHED', 'Партия завершена.');
+            if (hasPlayerFinished(room.game, player.color)) fail('PLAYER_FINISHED', 'Вы уже победили и наблюдаете за остальными игроками.');
+            if (room.players.some(member => !member.socketId && !hasPlayerFinished(room.game, member.color))) fail('PAUSED', 'Ждём подключения продолжающих игроков.');
             const current = room.game.players[room.game.currentPlayerIndex];
             if (current.color !== player.color) fail('NOT_YOUR_TURN', 'Сейчас ход другого игрока.');
             if (command.revision !== room.revision) fail('STALE_STATE', 'Поле обновилось. Повторите действие.');

@@ -33,7 +33,7 @@ const TilePieces = ({ pieces, interaction }) => (
     </span>
 );
 
-const GameBoard = ({ onTileClick, selectedTileIndex, movableTileIndexes, interaction, visualTheme = 'classic', canRoll, onRoll, isRolling, canSkip, onSkip, connectionPause, onReconnect }) => {
+const GameBoard = ({ onTileClick, selectedTileIndex, movableTileIndexes, interaction, visualTheme = 'classic', canRoll, onRoll, isRolling, canSkip, onSkip, connectionPause, onReconnect, results }) => {
     const tileIndexes = useSelector(selectTileIndexes);
     const players = useSelector(selectPlayers);
     const pieces = useSelector(selectPieces);
@@ -73,11 +73,11 @@ const GameBoard = ({ onTileClick, selectedTileIndex, movableTileIndexes, interac
                             <button
                                 type="button" key={tile.index}
                                 className={`cell ${tile.name} ${inactiveHome ? 'inactive-home' : ''} ${startingPlayer ? 'start' : ''} ${isMovable ? 'movable' : ''} ${isSelected ? 'selected' : ''} ${tilePieces.length ? 'occupied' : ''} ${isTarget ? 'drop-target' : ''} ${isTarget && interaction.targetTiles.at(-1) !== tile.index ? 'transfer-entry' : ''} ${isHovered ? 'drop-hover' : ''}`}
-                                style={style} disabled={!isMovable && !isTarget} onClick={() => onTileClick(tile.index)}
+                                style={style} disabled={!isMovable && !isTarget} onClick={event => onTileClick(tile.index, event.target.closest('[data-piece-id]')?.dataset.pieceId)}
                                 data-tile-index={tile.index} data-tile-type={tile.name} data-movable={String(isMovable)}
                                 data-alley-target={tile.name === 'alley' ? tile.moveTo : undefined}
                                 data-drop-target={String(isTarget)}
-                                aria-label={`${description}${tilePieces.length ? `. Фишек: ${tilePieces.length}` : ''}${isMovable ? '. Можно выбрать для хода' : ''}${isTarget ? '. Сюда можно поставить выбранную фишку' : ''}`}
+                                aria-label={`${description}${tilePieces.length ? `. Фишек: ${tilePieces.length}` : ''}${isMovable ? isPrison ? '. Нажмите на свою фишку, чтобы вернуть её в руку за одну шестёрку' : '. Можно выбрать для хода' : ''}${isTarget ? '. Сюда можно поставить выбранную фишку' : ''}`}
                                 aria-pressed={isSelected} title={description}
                             >
                                 {isPrison ? (
@@ -104,6 +104,7 @@ const GameBoard = ({ onTileClick, selectedTileIndex, movableTileIndexes, interac
                         {connectionPause.canRetry && <button type="button" className="button button-secondary reconnect-room" onClick={onReconnect}>Подключиться сейчас</button>}
                     </div>
                 </div>}
+                {results}
             </div>
         </div>
     );

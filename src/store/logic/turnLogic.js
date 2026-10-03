@@ -1,4 +1,4 @@
-import { calculateActionFlags } from './gameRules.js';
+import { calculateActionFlags, hasPlayerFinished, isGameOver } from './gameRules.js';
 
 const setActionFlags = (state, flags) => {
     state.canMove = flags.canMove;
@@ -11,7 +11,13 @@ const clearRolledValues = (state) => {
 };
 
 export const changePlayer = (state) => {
-    state.currentPlayerIndex = (state.currentPlayerIndex + 1) % state.players.length;
+    for (let step = 1; step <= state.players.length; step += 1) {
+        const nextIndex = (state.currentPlayerIndex + step) % state.players.length;
+        if (!hasPlayerFinished(state, state.players[nextIndex].color)) {
+            state.currentPlayerIndex = nextIndex;
+            return;
+        }
+    }
 };
 
 export const consumeMoveValue = (state, moveValue) => {
@@ -36,7 +42,8 @@ const blockFinishedGame = (state) => {
     state.canRoll = false;
     state.canMove = false;
     state.canPlace = false;
-    state.turnMessage = `Победил игрок ${state.winner}!`;
+    state.isRolling = false;
+    state.turnMessage = `Партия завершена. Победители: ${state.winners.join(', ')}. Не успел игрок ${state.loser}.`;
 };
 
 const prepareExtraRoll = (state) => {
@@ -61,8 +68,15 @@ const finishTurn = (state) => {
 };
 
 export const settleTurnState = (state) => {
-    if (state.winner) {
+    if (isGameOver(state)) {
         blockFinishedGame(state);
+        return;
+    }
+
+    const player = state.players[state.currentPlayerIndex];
+    if (hasPlayerFinished(state, player.color)) {
+        finishTurn(state);
+        state.turnMessage = `Игрок ${player.color} заполнил хату и победил. ${state.turnMessage}`;
         return;
     }
 

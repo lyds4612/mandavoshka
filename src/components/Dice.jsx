@@ -5,7 +5,7 @@ import { finishDiceRoll } from '../store/gameSlice';
 import { selectDice, selectDiceRoll, selectIsRolling, selectMoves } from '../store/selectors/gameSelectors';
 import { createDiceScene } from './dice/createDiceScene';
 import { DICE_FACES, PIP_POSITIONS } from './dice/diceFaces';
-import { DICE_ROLL_DURATION, REPEAT_ROLL_DURATION } from '../shared/animationTiming.js';
+import { DICE_ROLL_DURATION, getDiceRollDuration } from '../shared/animationTiming.js';
 
 export { DICE_ROLL_DURATION };
 
@@ -60,7 +60,7 @@ const Dice = ({ visualTheme = 'classic' }) => {
     const container = useRef(null);
     const scene = useRef(null);
     const [supportsWebGL, setSupportsWebGL] = useState(true);
-    const duration = reducedMotion ? 180 : roll?.duration ?? (roll?.sequence > 3 ? REPEAT_ROLL_DURATION : DICE_ROLL_DURATION);
+    const duration = getDiceRollDuration(roll, reducedMotion);
     const rollId = roll?.id;
     const firstValue = roll?.values[0];
     const secondValue = roll?.values[1];

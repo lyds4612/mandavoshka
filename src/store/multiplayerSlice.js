@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { hasPlayerFinished, isGameOver } from './logic/gameRules.js';
 
 const initialState = { mode: 'local', status: 'idle', room: null, playerId: null, inviteOrigin: null, pending: false, error: '',
     reconnectAttempt: 0, sessionReplaced: false, sessionExpired: false, recoveryStatus: 'loading' };
@@ -30,11 +31,12 @@ export default multiplayerSlice.reducer;
 export const selectMultiplayer = state => state.multiplayer;
 export const selectIsOnline = state => state.multiplayer.mode === 'online';
 export const canControlGame = state => {
+    if (isGameOver(state.game)) return false;
     const network = state.multiplayer;
     if (!network || network.mode === 'local') return true;
     if (network.status !== 'connected' || network.sessionExpired || network.sessionReplaced || network.pending || network.room?.phase !== 'playing' || network.room.paused) return false;
     const me = network.room.players.find(player => player.id === network.playerId);
-    return me?.color === state.game.players[state.game.currentPlayerIndex].color;
+    return me?.color === state.game.players[state.game.currentPlayerIndex].color && !hasPlayerFinished(state.game, me.color);
 };
 export const selectCanControlGame = canControlGame;
 export const selectCanRestart = state => state.multiplayer.mode === 'local'

@@ -1,0 +1,67 @@
+.App[data-fitted-table='true'] {
+    position: fixed; inset: 0; z-index: 1000; width: 100%; height: 100dvh; min-height: 0;
+    overflow: hidden; overscroll-behavior: none; background-attachment: scroll;
+    --mobile-board-size: min(640px, calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)), calc(100dvh - 284px - env(safe-area-inset-top) - env(safe-area-inset-bottom)));
+}
+.App[data-fitted-table='true'] > .multiplayer-panel {
+    position: fixed; inset: calc(60px + env(safe-area-inset-top)) calc(8px + env(safe-area-inset-right)) calc(8px + env(safe-area-inset-bottom)) calc(8px + env(safe-area-inset-left));
+    z-index: 108; width: min(640px, calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right)));
+    max-height: calc(100dvh - 68px - env(safe-area-inset-top) - env(safe-area-inset-bottom));
+    margin: 0 auto; overflow: auto; overscroll-behavior: contain; box-shadow: 0 16px 48px #0008;
+}
+.fullscreen-rotate-hint {
+    position: absolute; bottom: calc(8px + env(safe-area-inset-bottom)); left: 50%; transform: translateX(-50%);
+    display: flex; align-items: center; gap: 8px; max-width: calc(100% - 16px); padding: 8px 16px;
+    border: 1px solid #b99a6366; border-radius: 8px; color: var(--ink); background: #21170cf2;
+    font-size: 12px; white-space: nowrap; pointer-events: none;
+}
+.App[data-theme='prison'] .fullscreen-rotate-hint { border-color: #8eaaa866; background: #1b2c32f2; }
+@media (orientation: landscape) and (max-height: 600px) {
+    .App[data-fitted-table='true'] {
+        --fullscreen-sidebar-size: 240px;
+        --mobile-board-size: min(calc(100dvh - 8px - env(safe-area-inset-top) - env(safe-area-inset-bottom)), calc(100vw - 16px - env(safe-area-inset-left) - env(safe-area-inset-right) - var(--fullscreen-sidebar-size)));
+        padding: calc(4px + env(safe-area-inset-top)) calc(4px + env(safe-area-inset-right)) calc(4px + env(safe-area-inset-bottom)) calc(4px + env(safe-area-inset-left));
+    }
+    .App[data-fitted-table='true'] .table-header {
+        position: absolute; top: calc(4px + env(safe-area-inset-top)); right: calc(4px + env(safe-area-inset-right));
+        width: var(--fullscreen-sidebar-size); height: 44px; margin: 0; gap: 8px;
+    }
+    .App[data-fitted-table='true'] .game-brand { display: none; }
+    .App[data-fitted-table='true'] .mobile-fullscreen-toggle { width: auto; min-width: 44px; padding: 0 8px; gap: 4px; }
+    .App[data-fitted-table='true'] .mobile-fullscreen-label { display: inline; font-size: 12px; }
+    .App[data-fitted-table='true'] .mobile-room-toggle { flex: 1; padding: 0 8px; }
+    .App[data-fitted-table='true'] .game-table,
+    .App[data-fitted-table='true'] .game-table[data-player-count] {
+        width: 100%; height: 100%; max-width: none; margin: 0;
+        grid-template-columns: minmax(0, 1fr) var(--fullscreen-sidebar-size);
+        grid-template-rows: 44px minmax(0, 1fr) 88px;
+        grid-template-areas: 'board .' 'board players' 'board focus'; gap: 8px;
+    }
+    .App[data-fitted-table='true'] .board-shell { align-self: center; }
+    .App[data-fitted-table='true'] .board-frame { padding: 4px; box-shadow: inset 0 0 0 2px #0005, 0 2px 4px #0006; }
+    .App[data-fitted-table='true'] .mobile-table-head {
+        display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); grid-template-rows: max-content 44px;
+        gap: 8px; height: auto; max-height: 100%; min-height: 0; overflow: auto; overscroll-behavior: contain;
+    }
+    .App[data-fitted-table='true'] .mobile-players { grid-column: 1 / -1; grid-template-columns: repeat(2, minmax(0, 1fr)); }
+    .App[data-fitted-table='true'] .mobile-player { display: grid; grid-template-columns: minmax(0, 1fr) auto; grid-template-rows: 16px 16px; height: 44px; gap: 0 4px; }
+    .App[data-fitted-table='true'] .mobile-player-identity { grid-column: 1 / -1; }
+    .App[data-fitted-table='true'] .mobile-player-progress { justify-content: start; }
+    .App[data-fitted-table='true'] .mobile-player-turn { line-height: 16px; }
+    .App[data-fitted-table='true'] .mobile-player-offline { font-size: 9px; }
+    .App[data-fitted-table='true'] .mobile-table-head > .piece-confirm-action,
+    .App[data-fitted-table='true'] .board-zoom-toggle {
+        width: 100%; height: 44px; min-height: 44px; flex-direction: row; gap: 4px; padding: 4px 8px;
+    }
+    .App[data-fitted-table='true'] .mobile-table-head > .piece-confirm-action > span:last-child,
+    .App[data-fitted-table='true'] .board-zoom-toggle > span:last-child { font-size: 11px; }
+    .App[data-fitted-table='true'] .player-card.is-mobile-focus { align-self: end; padding: 4px 8px; grid-template-columns: minmax(0, 1fr) auto; }
+    .App[data-fitted-table='true'] .player-card.is-mobile-focus .player-avatar { display: none; }
+    .App[data-fitted-table='true'] .player-card.is-mobile-focus .player-card-heading { grid-column: 1; }
+    .App[data-fitted-table='true'] .player-card.is-mobile-focus h2 { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .App[data-fitted-table='true'] .player-card.is-mobile-focus .player-turn-state { grid-column: 2; padding: 4px; }
+    .App[data-fitted-table='true'] .player-card.is-mobile-focus .player-reserve { gap: 8px; }
+}
+@media (orientation: landscape) and (max-height: 600px) and (max-width: 640px) {
+    .App[data-fitted-table='true'] { --fullscreen-sidebar-size: 216px; }
+}

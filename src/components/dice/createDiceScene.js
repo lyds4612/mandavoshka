@@ -5,6 +5,7 @@ import {
 } from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { DICE_FACES, PIP_POSITIONS } from './diceFaces';
+import { DICE_BOUNCE_PROGRESS, DICE_STAGGER } from '../../shared/animationTiming.js';
 
 const UP = new Vector3(0, 1, 0);
 const FACE_FORWARD = new Vector3(0, 0, 1);
@@ -49,8 +50,9 @@ const makeDie = (geometry, pipGeometry) => {
 };
 
 const bounceHeight = (progress) => {
-    if (progress < 0.34) return 7 * (1 - (progress / 0.34) ** 2);
-    const bounces = [[0.34, 0.62, 1.5], [0.62, 0.82, 0.4], [0.82, 1, 0.07]];
+    const [first, second, third, last] = DICE_BOUNCE_PROGRESS;
+    if (progress < first) return 7 * (1 - (progress / first) ** 2);
+    const bounces = [[first, second, 1.5], [second, third, 0.4], [third, last, 0.07]];
     const [start, end, height] = bounces.find(([, end]) => progress <= end) ?? bounces[2];
     const time = (progress - start) / (end - start);
     return Math.max(0, 4 * height * time * (1 - time));
@@ -160,7 +162,7 @@ export const createDiceScene = (container, onContextLost) => {
                 const progress = Math.min((now - startedAt) / duration, 1);
                 dice.forEach(({ group }, index) => {
                     const motion = motions[index];
-                    const time = Math.max(0, Math.min(1, (progress - index * 0.045) / (1 - index * 0.045)));
+                    const time = Math.max(0, Math.min(1, (progress - index * DICE_STAGGER) / (1 - index * DICE_STAGGER)));
                     if (time < 0.76) {
                         group.quaternion.setFromEuler(new Euler(...motion.spin.map((angle) => angle * time)));
                     } else {

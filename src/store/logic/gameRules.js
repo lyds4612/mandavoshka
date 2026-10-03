@@ -3,6 +3,10 @@ import { TILE_TYPES } from '../utils/tileUtils.js';
 
 export const LAST_HOME_PROGRESS = OUTER_LAYER_TILES_COUNT + 3;
 
+export const isGameOver = (state) => Boolean(state.loser);
+
+export const hasPlayerFinished = (state, color) => state.winners?.includes(color) ?? false;
+
 export const isPieceInHand = (piece) => piece.tile === null;
 
 export const isPieceInPrison = (state, piece) => piece.tile === state.prisonTileIndex;
@@ -55,8 +59,12 @@ export const calculateOrdinaryMove = ({ state, piece, player, moveValue }) => {
     }
 
     if (nextProgress >= OUTER_LAYER_TILES_COUNT) {
+        const homeTile = player.home[nextProgress - OUTER_LAYER_TILES_COUNT];
+        if (state.pieces[player.color].some(candidate => candidate.tile === homeTile)) {
+            return null;
+        }
         return {
-            tile: player.home[nextProgress - OUTER_LAYER_TILES_COUNT],
+            tile: homeTile,
             progress: nextProgress,
         };
     }
@@ -85,7 +93,7 @@ export const calculateOrdinaryMove = ({ state, piece, player, moveValue }) => {
 };
 
 export const getRequiredMoveForPiece = (state, piece, player) => {
-    if (isPieceInHand(piece) || state.moves.length === 0) {
+    if (isGameOver(state) || hasPlayerFinished(state, player.color) || isPieceInHand(piece) || state.moves.length === 0) {
         return null;
     }
 
@@ -111,14 +119,13 @@ export const canPieceMove = (state, piece, player) =>
 
 // A preview follows the same next die and automatic transfers as the actual move.
 export const getPieceMovePreview = (state, piece, player) => {
-    if (state.winner || state.isRolling) return null;
+    if (isGameOver(state) || hasPlayerFinished(state, player.color) || state.isRolling) return null;
     if (isPieceInHand(piece)) {
         return state.canPlace ? { action: 'place', tile: player.start, path: [player.start], targets: [player.start] } : null;
     }
     if (!state.canMove || getRequiredMoveForPiece(state, piece, player) === null) return null;
     if (isPieceInPrison(state, piece)) {
-        const tile = state.moves.filter(value => value === 6).length >= 2 ? player.start : null;
-        return { action: 'move', tile, path: [tile], targets: tile === null ? [] : [tile] };
+        return { action: 'move', tile: null, path: [null], targets: [] };
     }
     if (isPieceInJail(state, piece)) {
         const jail = state.tiles[piece.tile];
@@ -138,7 +145,7 @@ export const getPieceMovePreview = (state, piece, player) => {
 };
 
 export const calculateActionFlags = (state) => {
-    if (state.winner || state.isRolling) {
+    if (isGameOver(state) || hasPlayerFinished(state, state.players[state.currentPlayerIndex].color) || state.isRolling) {
         return { canMove: false, canPlace: false };
     }
 
@@ -151,7 +158,10 @@ export const calculateActionFlags = (state) => {
     };
 };
 
-export const isWinningPosition = (state, player) => {
-    const finalHomeTile = player.home[player.home.length - 1];
-    return state.pieces[player.color].every((piece) => piece.tile === finalHomeTile);
+export const countOccupiedHomeCells = (pieces, home) => {
+    const occupiedTiles = new Set(pieces.map(piece => piece.tile));
+    return home.filter(tile => occupiedTiles.has(tile)).length;
 };
+
+export const isWinningPosition = (state, player) =>
+    countOccupiedHomeCells(state.pieces[player.color], player.home) === player.home.length;
