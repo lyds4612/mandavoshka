@@ -49,7 +49,6 @@
 .tile-pieces { position: absolute; inset: 9%; display: flex; flex-wrap: wrap; align-content: center; align-items: center; justify-content: center; gap: 4%; }
 #game-board .piece { width: 45%; max-width: 28px; }
 #game-board .cell:not(.prison) .tile-pieces:not([data-piece-count='1']) .piece { width: min(45%, calc((100% - (var(--piece-columns) - 1) * 4%) / var(--piece-columns))); }
-.piece-count { position: absolute; right: -1px; bottom: -1px; z-index: 7; display: grid; place-items: center; min-width: 14px; height: 14px; padding: 0 2px; border: 1px solid #f9efd6; border-radius: 4px; color: #fff4dc; background: #192b32; font: 700 10px/1 'Segoe UI', sans-serif; pointer-events: none; }
 #game-board .cell.prison {
     z-index: 3; margin: 3%; clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
     background: #51412c; box-shadow: none;

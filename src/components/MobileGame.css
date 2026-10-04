@@ -79,10 +79,9 @@
     .mobile-hand .reserve-slot.is-selected { outline: 0; }
     .mobile-hand .reserve-slot.is-selected .piece, .mobile-hand .reserve-slot.is-selected .away-piece-mark { outline: 2px solid #fff4dc; outline-offset: 2px; box-shadow: none; }
     .mobile-hand .player-piece-actions { display: flex; gap: 4px; height: 44px; }
-    .mobile-hand .piece-confirm-action, .mobile-hand .cancel-piece-selection { flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 4px; border-radius: 8px; }
-    .mobile-hand .piece-confirm-action > span:first-child { font-size: 22px; }
+    .mobile-hand .piece-confirm-action, .mobile-hand .cancel-piece-selection { display: grid; place-items: center; flex: 0 0 44px; width: 44px; height: 44px; min-height: 44px; padding: 0; border-radius: 8px; line-height: 1; }
+    .mobile-hand .piece-action-icon { width: 24px; height: 24px; }
     .mobile-hand .piece-confirm-action > span:last-child { display: none; }
-    .mobile-hand .cancel-piece-selection { font-size: 24px; }
     .App .mobile-hand .piece-confirm-action, .App .mobile-hand .cancel-piece-selection { background: #ffffff0a; border-color: #ffffff26; }
     .App .mobile-hand .piece-confirm-action:not(:disabled) { color: #241d12; background: #f8d484; border-color: #ffe5ac; }
     .mobile-hand .piece-confirm-action:disabled, .mobile-hand .cancel-piece-selection:disabled { opacity: 1; color: color-mix(in srgb, var(--ink) 42%, transparent); border-color: #ffffff12; background: #ffffff04; }

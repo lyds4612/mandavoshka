@@ -14,7 +14,7 @@
 .reserve-slot.is-away.is-selected { outline: 2px solid var(--player-light); }
 .player-piece-actions { display: flex; gap: 4px; height: 32px; justify-content: center; }
 .piece-confirm-action, .cancel-piece-selection { display: inline-flex; align-items: center; justify-content: center; gap: 4px; min-height: 32px; padding: 4px 8px; border: 1px solid #b99a6366; border-radius: 4px; color: var(--ink); background: #493721; font: 600 11px/16px 'Segoe UI', sans-serif; cursor: pointer; }
-.piece-confirm-action > span:first-child { font-size: 18px; }
+.piece-action-icon { display: block; flex-shrink: 0; width: 18px; height: 18px; }
 .player-piece-actions .cancel-piece-selection { width: 32px; padding: 0; flex-shrink: 0; font-size: 20px; }
 .piece-confirm-action:disabled, .cancel-piece-selection:disabled { opacity: .45; cursor: default; }
 .piece-confirm-action:focus-visible, .cancel-piece-selection:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
