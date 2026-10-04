@@ -114,7 +114,6 @@
     .player-turn-state { height: 32px; }
     .player-turn-state.is-current-turn, .player-turn-state.is-winner { font-size: 12px; }
 }
-@media (prefers-reduced-motion: reduce) { .board-roll-cue, .board-roll-cue > * { animation: none; } }
 .board-connection-pause {
     position: absolute; inset: 0; z-index: 12; display: grid; place-items: center; padding: 16px;
     background: #17110c80; border-radius: inherit; cursor: default;

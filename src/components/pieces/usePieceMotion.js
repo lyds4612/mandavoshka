@@ -3,7 +3,6 @@ import { getPieceMovePreview } from '../../store/logic/gameRules.js';
 import { slowAnimation } from '../../shared/animationTiming.js';
 import { pieceElement, pieceId, pieceRect } from './usePieceInteraction';
 
-const reducedMotion = () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches;
 const readPositions = root => new Map([...root?.querySelectorAll('.piece[data-piece-id]') ?? []]
     .map(element => [element.dataset.pieceId, pieceRect(element)]).filter(([, rect]) => rect));
 const transform = (point, size, lift = 0, rotation = 0) =>
@@ -25,7 +24,7 @@ export const usePieceMotion = ({ game, tableRef, releaseOrigins, scope }) => {
     const refreshPositions = useCallback(() => { stopAll(); positions.current = readPositions(tableRef.current); }, [stopAll, tableRef]);
     const animate = (id, from, to, kind, waypoints = [], delay = 0) => {
         const target = pieceElement(tableRef.current, id);
-        if (!target || !from || !to || !layerRef.current || reducedMotion() || !target.animate) return;
+        if (!target || !from || !to || !layerRef.current || !target.animate) return;
         const displayed = flights.current.get(id)?.clone;
         if (displayed) from = pieceRect(displayed);
         stopFlight(id);
@@ -57,7 +56,7 @@ export const usePieceMotion = ({ game, tableRef, releaseOrigins, scope }) => {
         const clean = () => {
             if (flights.current.get(id) !== flight) return;
             flights.current.delete(id); clone.remove(); target.style.visibility = '';
-            if (kind !== 'return' && !reducedMotion()) target.animate([
+            if (kind !== 'return') target.animate([
                 { transform: 'scale(1.16)', filter: 'brightness(1.4)' }, { transform: 'scale(.94)' }, { transform: 'scale(1)', filter: 'brightness(1)' },
             ], { duration: slowAnimation(180), easing: 'ease-out' });
         };
@@ -118,11 +117,9 @@ export const usePieceMotion = ({ game, tableRef, releaseOrigins, scope }) => {
             });
             positions.current = readPositions(tableRef.current);
         };
-        const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
         window.addEventListener('resize', refreshPositions);
         window.addEventListener('scroll', scroll, true);
-        preference?.addEventListener('change', refreshPositions);
-        return () => { window.removeEventListener('resize', refreshPositions); window.removeEventListener('scroll', scroll, true); preference?.removeEventListener('change', refreshPositions); stopAll(); };
+        return () => { window.removeEventListener('resize', refreshPositions); window.removeEventListener('scroll', scroll, true); stopAll(); };
     }, [stopAll, tableRef, refreshPositions]);
     return { layerRef, returnDrag, refreshPositions };
 };

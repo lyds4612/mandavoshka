@@ -165,9 +165,6 @@
     .rules-content { padding: 24px; }
     .rules-content h2 { font-size: 24px; }
 }
-@media (prefers-reduced-motion: reduce) {
-    .button, #game-board .cell { transition: none; }
-}
 
 @media (max-height: 850px) and (min-width: 981px) {
     .player-avatar { width: 64px; }

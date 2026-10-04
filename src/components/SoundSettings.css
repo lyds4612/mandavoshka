@@ -53,7 +53,3 @@
     .sound-settings-inline .sound-panel-heading .sound-toggle > span { display: none; }
     .sound-settings-inline .sound-ranges { grid-template-columns: minmax(0, 1fr); gap: 12px; }
 }
-@media (prefers-reduced-motion: reduce) {
-    .music-indicator.is-playing i { animation: none; height: 12px; }
-    .music-enabled-toggle > span { transition: none; }
-}

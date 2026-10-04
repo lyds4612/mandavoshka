@@ -28,7 +28,3 @@
 #game-board .cell.drop-hover::before { border-style: solid; border-color: #527334; }
 .App[data-theme='prison'] #game-board .cell.drop-target { background-color: #c4bb86; box-shadow: inset 0 0 0 2px #74744d, inset 0 0 20px #dde0a978; }
 .App[data-theme='prison'] #game-board .cell.drop-hover { background-color: #d8dba5; box-shadow: inset 0 0 0 3px #506e54; }
-@media (prefers-reduced-motion: reduce) {
-    #game-board .cell { transition: none; }
-    .piece-flight { display: none; }
-}

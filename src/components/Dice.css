@@ -81,8 +81,3 @@
     82% { transform: rotateX(calc(var(--result-x) - 12deg)) rotateY(-9deg) rotateZ(var(--result-z)); }
     100% { transform: rotateX(var(--result-x)) rotateY(0deg) rotateZ(var(--result-z)); }
 }
-
-@media (prefers-reduced-motion: reduce) {
-    .fallback-dice.is-rolling .fallback-die-flight,
-    .fallback-dice.is-rolling .fallback-die-cube { animation: none; }
-}

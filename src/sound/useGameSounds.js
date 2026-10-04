@@ -53,13 +53,12 @@ export const useGameSounds = ({ game, scope, active, musicActive, releaseOrigins
     useLayoutEffect(() => {
         const before = previous.current;
         if (active && before?.active && before.scope === scope && game.rollCount > 0) {
-            const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
             if (before.game.diceRoll?.id !== game.diceRoll?.id || (before.game.isRolling && !game.isRolling)) engine.stop('dice');
-            const diceEvents = getDiceSoundEvents(before.game, game, { reducedMotion });
+            const diceEvents = getDiceSoundEvents(before.game, game);
             if (diceEvents.length) engine.play(diceEvents, 'dice');
             const player = before.game.players[before.game.currentPlayerIndex];
             const dragged = before.game.pieces[player.color].some((_, index) => releaseOrigins.current.has(`${player.color}-${index}`));
-            const events = getGameSoundEvents(before.game, game, { dragged, reducedMotion });
+            const events = getGameSoundEvents(before.game, game, { dragged });
             if (events.length) engine.play(events);
         } else engine.stop();
         previous.current = { game, scope, active };

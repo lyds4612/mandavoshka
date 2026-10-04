@@ -9,4 +9,3 @@ body { font-family: 'Segoe UI', Arial, sans-serif; -webkit-font-smoothing: antia
 button, input { font: inherit; }
 button { -webkit-tap-highlight-color: transparent; }
 ::selection { background: #ad884b; color: #fff3d4; }
-@media (prefers-reduced-motion: reduce) { *, *::before, *::after { transition-duration: .01ms !important; scroll-behavior: auto !important; } }

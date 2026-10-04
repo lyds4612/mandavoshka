@@ -39,4 +39,3 @@
     .character-story h3 { grid-column: 2; margin-top: 0; font-size: 18px; }
     .character-story p { grid-column: 1 / -1; margin-top: 0; }
 }
-@media (prefers-reduced-motion: reduce) { .character-choice-body { transition: none; } }

@@ -9,18 +9,6 @@ import { DICE_ROLL_DURATION, getDiceRollDuration } from '../shared/animationTimi
 
 export { DICE_ROLL_DURATION };
 
-const useReducedMotion = () => {
-    const [reduced, setReduced] = useState(() => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false);
-    useEffect(() => {
-        const preference = window.matchMedia?.('(prefers-reduced-motion: reduce)');
-        if (!preference) return;
-        const update = () => setReduced(preference.matches);
-        preference.addEventListener('change', update);
-        return () => preference.removeEventListener('change', update);
-    }, []);
-    return reduced;
-};
-
 const FALLBACK_ROTATIONS = { 1: [90, 0], 2: [0, 0], 3: [0, -90], 4: [0, 90], 5: [180, 0], 6: [-90, 0] };
 
 const FallbackDice = ({ roll, isRolling, availableDice, currentIndex, duration, reducedMotion }) => (
@@ -56,7 +44,8 @@ const Dice = ({ visualTheme = 'classic' }) => {
     const isRolling = useSelector(selectIsRolling);
     const dice = useSelector(selectDice);
     const moves = useSelector(selectMoves);
-    const reducedMotion = useReducedMotion();
+    // Game animations run independently of the operating system's motion preference.
+    const reducedMotion = false;
     const container = useRef(null);
     const scene = useRef(null);
     const [supportsWebGL, setSupportsWebGL] = useState(true);
