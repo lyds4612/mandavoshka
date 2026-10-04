@@ -1,4 +1,5 @@
 import { createMenuMusic } from './menuMusic.js';
+import { createDiceImpactSounds } from './diceImpactSounds.js';
 
 const VOLUME = 0.18;
 
@@ -44,7 +45,7 @@ export const synthesizeSound = (context, output, type, at, track = () => {}, str
 };
 
 export const createAudioEngine = ({ musicUrl, onMusicState } = {}) => {
-    let context = null, output = null, master = null, music = null, enabled = true, volume = 1;
+    let context = null, output = null, master = null, music = null, diceSounds = null, enabled = true, volume = 1;
     let musicWanted = false, musicVolume = .4, userInteracted = false;
     const voices = new Map();
     let pending = [];
@@ -72,14 +73,16 @@ export const createAudioEngine = ({ musicUrl, onMusicState } = {}) => {
             // Do not replay old moves when a browser finally permits audio.
             if (elapsed > 250) return;
             const unique = new Set();
-            events.forEach(({ type, delay = 0, strength }) => {
+            events.forEach(({ type, delay = 0, strength, contact }) => {
                 const key = `${type}:${delay}`;
                 if (unique.has(key) || voices.size >= 64) return;
                 unique.add(key);
-                synthesizeSound(context, output, type, context.currentTime + 0.01 + Math.max(0, delay - elapsed) / 1000, source => {
+                const at = context.currentTime + 0.01 + Math.max(0, delay - elapsed) / 1000;
+                const track = source => {
                     voices.set(source, group);
                     source.addEventListener('ended', () => voices.delete(source), { once: true });
-                }, strength);
+                };
+                if (!diceSounds?.play(type, at, track, strength, contact)) synthesizeSound(context, output, type, at, track, strength);
             });
         });
     };
@@ -91,9 +94,10 @@ export const createAudioEngine = ({ musicUrl, onMusicState } = {}) => {
         if (!AudioContext) return;
         try {
             if (!context || context.state === 'closed') {
-                music?.dispose(); context?.removeEventListener('statechange', onStateChange);
+                music?.dispose(); diceSounds?.dispose(); context?.removeEventListener('statechange', onStateChange);
                 context = new AudioContext(); master = context.createGain(); master.gain.value = volume; master.connect(context.destination);
                 output = context.createGain(); output.gain.value = VOLUME; output.connect(master);
+                diceSounds = createDiceImpactSounds(context, output);
                 if (musicUrl) { music = createMenuMusic(context, master, musicUrl, onMusicState); music.setVolume(musicVolume); }
                 context.addEventListener('statechange', onStateChange);
             }
@@ -125,6 +129,7 @@ export const createAudioEngine = ({ musicUrl, onMusicState } = {}) => {
         dispose() {
             stop();
             music?.dispose(); music = null;
+            diceSounds?.dispose(); diceSounds = null;
             if (context) {
                 context.removeEventListener('statechange', onStateChange);
                 if (context.state !== 'closed') context.close().catch(() => {});
