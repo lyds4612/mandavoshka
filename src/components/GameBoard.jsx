@@ -24,12 +24,13 @@ const tileDescription = (tile, label, startingPlayer) => {
     if (startingPlayer) return `${PLAYER_THEMES[startingPlayer.color].name}, старт 0`;
     return `Клетка ${label}`;
 };
-const TilePieces = ({ pieces, interaction }) => (
-    <span className="tile-pieces" data-piece-count={pieces.length}>
+const TilePieces = ({ pieces, interaction, showCount }) => (
+    <span className="tile-pieces" data-piece-count={pieces.length} style={{ '--piece-columns': Math.ceil(Math.sqrt(pieces.length)) }}>
         {pieces.map((piece) => (
             <span key={piece.id} className={`piece ${interaction.available[piece.id] ? 'is-draggable' : ''} ${interaction.selectedId === piece.id ? 'is-selected' : ''} ${interaction.drag?.id === piece.id ? 'is-drag-source' : ''}`}
                 data-piece-id={piece.id} data-piece-color={piece.color} data-piece-progress={piece.progress ?? ''} style={playerStyle(piece.color)} />
         ))}
+        {showCount && pieces.length > 1 && <span className="piece-count" aria-hidden="true">{pieces.length}</span>}
     </span>
 );
 
@@ -75,6 +76,7 @@ const GameBoard = ({ onTileClick, selectedTileIndex, movableTileIndexes, interac
                                 className={`cell ${tile.name} ${inactiveHome ? 'inactive-home' : ''} ${startingPlayer ? 'start' : ''} ${isMovable ? 'movable' : ''} ${isSelected ? 'selected' : ''} ${tilePieces.length ? 'occupied' : ''} ${isTarget ? 'drop-target' : ''} ${isTarget && interaction.targetTiles.at(-1) !== tile.index ? 'transfer-entry' : ''} ${isHovered ? 'drop-hover' : ''}`}
                                 style={style} disabled={!isMovable && !isTarget} onClick={event => onTileClick(tile.index, event.target.closest('[data-piece-id]')?.dataset.pieceId)}
                                 data-tile-index={tile.index} data-tile-type={tile.name} data-movable={String(isMovable)}
+                                data-piece-count={tilePieces.length}
                                 data-alley-target={tile.name === 'alley' ? tile.moveTo : undefined}
                                 data-drop-target={String(isTarget)}
                                 aria-label={`${description}${tilePieces.length ? `. Фишек: ${tilePieces.length}` : ''}${isMovable ? isPrison ? '. Нажмите на свою фишку, чтобы вернуть её в руку за одну шестёрку' : '. Можно выбрать для хода' : ''}${isTarget ? '. Сюда можно поставить выбранную фишку' : ''}`}
@@ -86,7 +88,7 @@ const GameBoard = ({ onTileClick, selectedTileIndex, movableTileIndexes, interac
                                         <span>Тюрьма</span>
                                     </span>
                                 ) : <span className="cell-label">{label}</span>}
-                                {tilePieces.length > 0 && <TilePieces pieces={tilePieces} interaction={interaction} />}
+                                {tilePieces.length > 0 && <TilePieces pieces={tilePieces} interaction={interaction} showCount={tile.name !== 'jail' && tile.name !== 'prison'} />}
                             </button>
                         );
                     })}

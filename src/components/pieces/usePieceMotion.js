@@ -56,7 +56,9 @@ export const usePieceMotion = ({ game, tableRef, releaseOrigins, scope }) => {
         const clean = () => {
             if (flights.current.get(id) !== flight) return;
             flights.current.delete(id); clone.remove(); target.style.visibility = '';
-            if (kind !== 'return') target.animate([
+            const cell = target.closest('.cell');
+            const canBounce = !cell?.classList.contains('prison') && Number(cell?.dataset.pieceCount ?? 1) < 2;
+            if (kind !== 'return' && canBounce) target.animate([
                 { transform: 'scale(1.16)', filter: 'brightness(1.4)' }, { transform: 'scale(.94)' }, { transform: 'scale(1)', filter: 'brightness(1)' },
             ], { duration: slowAnimation(180), easing: 'ease-out' });
         };

@@ -1,0 +1,10 @@
+.local-side-picker { margin: 16px 0; padding: 0; border: 0; }
+.local-side-picker legend { margin-bottom: 8px; font-size: 16px; font-weight: 700; }
+.local-side-picker > div { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+.local-side-picker label { position: relative; cursor: pointer; }
+.local-side-picker input { position: absolute; inset: 0; width: 100%; height: 100%; margin: 0; opacity: 0; cursor: pointer; }
+.local-side-picker label span { display: grid; place-items: center; min-height: 44px; padding: 8px; border: 1px solid #b99a6355; border-radius: 8px; }
+.local-side-picker input:checked + span { color: #241d12; background: #f8d484; border-color: #ffe5ac; }
+.local-side-picker input:focus-visible + span { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.local-side-picker p { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+@media (max-width: 480px) { .local-side-picker > div { grid-template-columns: repeat(2, minmax(0, 1fr)); } }

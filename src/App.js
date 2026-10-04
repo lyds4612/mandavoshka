@@ -10,6 +10,10 @@ import GameMenu from './components/GameMenu';
 import SoundSettings from './components/SoundSettings';
 import LocalGameSetup from './components/LocalGameSetup';
 import MobilePlayers from './components/MobilePlayers';
+import MobileHand from './components/MobileHand';
+import PieceChooser from './components/pieces/PieceChooser';
+import TutorialDialog from './components/TutorialDialog';
+import GameDialog from './components/GameDialog';
 import GameResults from './components/GameResults';
 import BoardViewport from './components/BoardViewport';
 import FullscreenButton from './components/fullscreen/FullscreenButton';
@@ -17,7 +21,8 @@ import { useGameFullscreen } from './components/fullscreen/useGameFullscreen';
 import { getInvitationCode } from './multiplayer/invitation.js';
 import { getConnectionNotice } from './multiplayer/connectionNotice.js';
 import { getCharacter } from './shared/characters';
-import { createLocalRoster, selectLocalCharacter } from './components/characterRoster';
+import { createLocalRoster, selectLocalCharacter, selectLocalColor } from './components/characterRoster';
+import { readPlayerProfile, savePlayerProfile } from './shared/playerProfile';
 import { selectCanControlGame, selectCanRestart, selectMultiplayer } from './store/multiplayerSlice.js';
 import { pauseLocalGame, resumeLocalGame, selectLocalGame, startLocalGame } from './store/localGameSlice.js';
 import { useLocalBots } from './bots/useLocalBots';
@@ -39,9 +44,11 @@ import {
 
 const App = () => {
     const dispatch = useDispatch();
-    const [characterId, setCharacterId] = useState('');
-    const [playerName, setPlayerName] = useState('');
-    const [localRoster, setLocalRoster] = useState(() => createLocalRoster());
+    const [profile, setProfile] = useState(readPlayerProfile);
+    const { characterId, name: playerName } = profile;
+    const setCharacterId = id => setProfile(value => ({ ...value, characterId: id }));
+    const setPlayerName = name => setProfile(value => ({ ...value, name }));
+    const [localRoster, setLocalRoster] = useState(() => createLocalRoster(profile.characterId, profile.color));
     const [screen, setScreen] = useState('menu');
     const [setupMode, setSetupMode] = useState(null);
     const [botCount, setBotCount] = useState(3);
@@ -68,12 +75,11 @@ const App = () => {
     const connected = network.status === 'connected' && !network.sessionExpired && !network.sessionReplaced;
     const participants = network.mode === 'online' ? network.room?.players.map(member => ({ ...member,
         connected: member.connected && (member.id !== network.playerId || connected) })) ?? []
-        : localRoster.filter(member => players.some(player => player.color === member.color)).map((member, index) => ({ ...member, id: `local-${member.color}`, connected: true, isBot: local.mode === 'bots' && index > 0,
-            name: index === 0 && playerName.trim() ? playerName.trim() : getCharacter(member.characterId).title }));
+        : localRoster.filter(member => players.some(player => player.color === member.color)).map(member => ({ ...member, id: `local-${member.color}`, connected: true, isBot: local.mode === 'bots' && member.color !== local.humanColor,
+            name: member.color === local.humanColor && playerName.trim() ? playerName.trim() : getCharacter(member.characterId).title }));
     const connectionPause = gamePhase === 'playing' && !gameOver && (!connected || network.room?.paused) ? notice : null;
     const { canRoll } = useSelector(selectActionFlags);
     const isMyTurn = canControl;
-    useLocalBots({ game, enabled: network.mode === 'local' && showTable && local.mode === 'bots' && !local.paused, humanColor: local.humanColor });
     const tableRef = useRef(null);
     const appRef = useRef(null);
     const fullscreen = useGameFullscreen(appRef, showTable && gamePhase === 'playing');
@@ -84,15 +90,19 @@ const App = () => {
     const motion = usePieceMotion({ game, tableRef, releaseOrigins, scope: `${network.mode}:${network.room?.code ?? ''}` });
     const interaction = usePieceInteraction({ game, canControl, tableRef, releaseOrigins, onReturn: motion.returnDrag,
         onAction: move => dispatch(move.action === 'place' ? placePiece(move.index) : movePiece({ tileIndex: move.piece.tile, pieceIndex: move.index })) });
-    const { selectedTileIndex } = interaction;
     const [rulesOpen, setRulesOpen] = useState(false);
     const [visualTheme, setVisualTheme] = useVisualTheme();
     const [menuOpen, setMenuOpen] = useState(false);
     const [roomPanelOpen, setRoomPanelOpen] = useState(false);
-    const [boardZoomed, setBoardZoomed] = useState(false);
-    const myId = network.mode === 'online' ? network.playerId : 'local-green';
+    const [tutorialOpen, setTutorialOpen] = useState(false);
+    const [tutorialPrompt, setTutorialPrompt] = useState(false);
+    const [startAfterTutorial, setStartAfterTutorial] = useState(false);
+    useEffect(() => { savePlayerProfile(profile); }, [profile]);
+    useLocalBots({ game, enabled: network.mode === 'local' && showTable && local.mode === 'bots' && !local.paused && !menuOpen && !rulesOpen && !tutorialOpen, humanColor: local.humanColor });
+    const myId = network.mode === 'online' ? network.playerId : `local-${local.humanColor}`;
     const myColor = participants.find(member => member.id === myId)?.color;
     const mobileFocusColor = gameOver ? myColor ?? loser : currentPlayerColor;
+    const mobilePlayer = players.find(player => player.color === mobileFocusColor);
     const onlinePhase = network.mode === 'online' ? network.room?.phase ?? 'connecting' : invited ? 'invited' : screen === 'playing' ? 'local' : screen === 'setup' ? 'choosing' : 'menu';
     const paused = Boolean(connectionPause);
     const turnColor = loser ?? currentPlayerColor;
@@ -100,7 +110,7 @@ const App = () => {
     const showRoomPanel = roomPanelOpen || (!paused && Boolean(network.error))
         || network.recoveryStatus !== 'ready' || (gamePhase !== 'playing' && Boolean(network.room?.paused));
     useEffect(() => {
-        setRoomPanelOpen(false); setBoardZoomed(false);
+        setRoomPanelOpen(false);
         if (network.mode === 'online') window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     }, [network.mode, network.room?.phase]);
     useEffect(() => {
@@ -113,9 +123,6 @@ const App = () => {
         }
         previousNetworkMode.current = network.mode;
     }, [network.mode]);
-    useEffect(() => { setBoardZoomed(false); }, [currentPlayerColor, isRolling]);
-    useEffect(() => { if (paused || gameOver) setBoardZoomed(false); }, [paused, gameOver]);
-    useEffect(() => { setBoardZoomed(false); }, [fullscreen.fitted, fullscreen.active, fullscreen.landscape]);
     useEffect(() => {
         if (!menuOpen) return;
         const escape = event => { if (event.key === 'Escape') setMenuOpen(false); };
@@ -130,7 +137,6 @@ const App = () => {
     };
     const handleReset = (activeColors = players.map(player => player.color)) => {
         setMenuOpen(false);
-        setBoardZoomed(false);
         interaction.clearSelection();
         dispatch(resetGame(activeColors));
     };
@@ -138,21 +144,25 @@ const App = () => {
         setCharacterId(id);
         setLocalRoster(roster => selectLocalCharacter(roster, id));
     };
-    const handleStartLocal = () => {
+    const startLocalParty = () => {
         if (!characterId || (setupMode !== 'bots' && setupMode !== 'manual')) return;
         handleReset(localRoster.slice(0, setupMode === 'bots' ? botCount + 1 : 4).map(seat => seat.color));
-        dispatch(startLocalGame({ mode: setupMode, botCount }));
+        dispatch(startLocalGame({ mode: setupMode, botCount, humanColor: profile.color, playerName: playerName.trim(), characterId }));
         setScreen('playing');
         setRoomPanelOpen(false);
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     };
+    const handleStartLocal = () => {
+        if (!profile.tutorialPromptSeen) setTutorialPrompt(true); else startLocalParty();
+    };
     const handleOpenMenu = () => {
+        if (network.mode === 'online') dispatch({ type: 'online/leave' });
         if (invited && network.mode === 'local') {
             const url = new URL(window.location.href); url.searchParams.delete('room');
             window.history.replaceState(window.history.state, '', url); setInviteCode('');
         }
         dispatch(pauseLocalGame()); interaction.clearSelection();
-        setScreen('menu'); setRoomPanelOpen(false); setMenuOpen(false); setBoardZoomed(false);
+        setScreen('menu'); setRoomPanelOpen(false); setMenuOpen(false);
         window.scrollTo({ top: 0, left: 0, behavior: 'instant' });
     };
     const handleChooseMode = mode => {
@@ -181,19 +191,17 @@ const App = () => {
                     <div><span className="table-turn-label">{gameOver ? 'Партия завершена' : paused ? 'Пауза. Очередь:' : 'Сейчас ходит:'}</span>
                         <strong title={turnName}>{gameOver ? `Не успел: ${turnName}` : turnName}</strong></div>
                 </div>}
-                <button type="button" className="mobile-room-toggle" aria-controls={network.mode === 'online' ? 'online-panel' : undefined} aria-expanded={network.mode === 'online' ? roomPanelOpen || onlinePhase === 'waiting' : undefined}
-                    aria-label={network.mode === 'online' ? 'Открыть комнату' : 'Главное меню'} onClick={() => { if (network.mode === 'online') setRoomPanelOpen(open => !open); else handleOpenMenu(); setMenuOpen(false); }}>
-                    {network.mode === 'online' && <span className="online-connection-dot" data-connected={connected} aria-hidden="true" />}
-                    {network.room?.phase === 'playing' ? `${participants.filter(player => player.connected).length}/${participants.length}` : network.mode === 'online' ? 'Комната' : 'Меню'}
-                </button>
-                {showTable && gamePhase === 'playing' && <FullscreenButton active={fullscreen.active} pending={fullscreen.pending} disabled={Boolean(interaction.drag)}
-                    onToggle={() => { setMenuOpen(false); setRoomPanelOpen(false); setBoardZoomed(false); void fullscreen.toggle(); }} />}
                 <button type="button" className="mobile-menu-toggle" aria-label="Меню игры" aria-controls="game-settings" aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)}><span aria-hidden="true">{menuOpen ? '×' : '☰'}</span></button>
                 <nav id="game-settings" className={`table-navigation ${menuOpen ? 'is-open' : ''}`} aria-label="Меню игры">
                     <ThemeSwitcher theme={visualTheme} onChange={theme => { setVisualTheme(theme); setMenuOpen(false); }} />
                     <SoundSettings sound={sound} navigationOpen={menuOpen} />
+                    {showTable && gamePhase === 'playing' && <FullscreenButton active={fullscreen.active} pending={fullscreen.pending} disabled={Boolean(interaction.drag)}
+                        onToggle={() => { setMenuOpen(false); setRoomPanelOpen(false); void fullscreen.toggle(); }} />}
+                    {network.mode === 'online' && <button type="button" className="button button-quiet open-room" aria-controls="online-panel" aria-expanded={roomPanelOpen}
+                        onClick={() => { setRoomPanelOpen(open => !open); setMenuOpen(false); }}>Комната</button>}
                     <button type="button" className="button button-quiet open-rules" onClick={() => { setRulesOpen(true); setMenuOpen(false); }}>Правила</button>
-                    {showTable && network.mode === 'local' && <button type="button" className="button button-quiet open-game-menu" onClick={handleOpenMenu}>В меню</button>}
+                    <button type="button" className="button button-quiet open-tutorial" onClick={() => { setStartAfterTutorial(false); setTutorialOpen(true); setMenuOpen(false); }}>Как играть</button>
+                    {showTable && <button type="button" className="button button-quiet open-game-menu" onClick={handleOpenMenu}>{network.mode === 'online' ? 'Выйти в главное меню' : 'Главное меню'}</button>}
                     {showTable && <button type="button" className="button button-quiet reset-game" disabled={!canRestart} onClick={() => handleReset()}><span aria-hidden="true">↻</span> Новая партия</button>}
                 </nav>
             </header>
@@ -205,14 +213,16 @@ const App = () => {
             {!networkScreen && screen === 'menu' && <GameMenu onChoose={handleChooseMode} canContinue={local.active}
                 sound={sound} mode={local.mode} onContinue={() => { dispatch(resumeLocalGame()); setScreen('playing'); }} />}
             {!networkScreen && screen === 'setup' && setupMode !== 'online' && <LocalGameSetup mode={setupMode} botCount={botCount} onBotCountChange={setBotCount} characterId={characterId} onCharacterChange={handleCharacterChange}
-                name={playerName} onNameChange={setPlayerName} roster={localRoster.slice(0, setupMode === 'bots' ? botCount + 1 : 4)} onRandomize={() => setLocalRoster(createLocalRoster(characterId))}
+                name={playerName} onNameChange={setPlayerName} color={profile.color} onColorChange={color => { setProfile(value => ({ ...value,color })); setLocalRoster(roster => selectLocalColor(roster,color)); }}
+                roster={localRoster.slice(0, setupMode === 'bots' ? botCount + 1 : 4)} onRandomize={() => setLocalRoster(createLocalRoster(characterId, profile.color))}
                 onRosterChange={(color, id) => setLocalRoster(roster => selectLocalCharacter(roster, id, color))}
                 onStart={handleStartLocal} onBack={handleOpenMenu} />}
             {(networkScreen || (screen === 'setup' && setupMode === 'online')) && <MultiplayerPanel characterId={characterId} onCharacterChange={handleCharacterChange}
                 name={playerName} onNameChange={setPlayerName} onBack={handleOpenMenu} />}
             {showTable && <main className="game-table" aria-label="Партия Мандавошки" data-player-count={players.length} ref={tableRef} {...interaction.pointerHandlers}>
                 <MobilePlayers players={players} pieces={pieces} currentPlayerColor={currentPlayerColor} participants={participants}
-                    phase={gamePhase} paused={paused} winners={winners} loser={loser} zoomed={boardZoomed} onZoom={() => setBoardZoomed(zoomed => !zoomed)} zoomDisabled={isRolling || Boolean(interaction.drag) || paused || gameOver} interaction={interaction} />
+                    tiles={game.tiles} prisonTileIndex={game.prisonTileIndex} phase={gamePhase} paused={paused} winners={winners} loser={loser} />
+                <MobileHand player={mobilePlayer} pieces={pieces[mobileFocusColor]} tiles={game.tiles} prisonTileIndex={game.prisonTileIndex} interaction={interaction} />
                 {players.map((player) => {
                     const member = participants?.find(participant => participant.color === player.color);
                     return (
@@ -220,15 +230,13 @@ const App = () => {
                             currentPlayerColor={currentPlayerColor} tiles={game.tiles}
                             prisonTileIndex={game.prisonTileIndex} won={winners.includes(player.color)} lost={loser === player.color} gameOver={gameOver} interaction={interaction}
                             isMyTurn={isMyTurn} isRolling={isRolling} canRoll={canRoll} phase={gamePhase} paused={paused}
-                            mobileFocus={player.color === mobileFocusColor} boardZoomed={boardZoomed}
                             displayName={member?.name} characterId={member?.characterId} connected={member?.connected ?? true} isMe={member?.id === myId} isBot={member?.isBot} />
                     );
                 })}
-                <BoardViewport zoomed={boardZoomed} onZoomChange={setBoardZoomed} onLayoutChange={motion.refreshPositions} fullscreen={fullscreen.fitted}
-                    focusTileIndex={selectedTileIndex ?? interaction.targetTiles.at(-1) ?? players[game.currentPlayerIndex].start}>
+                <BoardViewport onLayoutChange={motion.refreshPositions}>
                 <GameBoard
                     onTileClick={interaction.onTileClick} interaction={interaction}
-                    selectedTileIndex={selectedTileIndex} movableTileIndexes={movableTileIndexes} visualTheme={visualTheme}
+                    selectedTileIndex={interaction.selectedTileIndex} movableTileIndexes={movableTileIndexes} visualTheme={visualTheme}
                     canRoll={canRoll} onRoll={handleRollDice} isRolling={isRolling} canSkip={canControl}
                     connectionPause={connectionPause} onReconnect={() => dispatch({ type: 'online/reconnect' })}
                     results={gameOver && <GameResults winners={winners} loser={loser} participants={participants} canRestart={canRestart} onRestart={handleReset} />}
@@ -240,10 +248,17 @@ const App = () => {
                     style={{ ...playerStyle(interaction.drag.color), width: interaction.drag.size, height: interaction.drag.size,
                         transform: `translate3d(${interaction.drag.x - interaction.drag.size / 2}px, ${interaction.drag.y - interaction.drag.size / 2 - 8}px, 0) scale(1.12)` }} />}
             </main>}
-            {fullscreen.active && !fullscreen.landscape && <div className="fullscreen-rotate-hint" role="status">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true"><rect x="7" y="4" width="10" height="16" rx="2" transform="rotate(-30 12 12)" /><path d="M3 9V4H8M21 15V20H16" /></svg>
-                <span>Поверните телефон боком</span>
-            </div>}
+            <PieceChooser interaction={interaction} tiles={game.tiles} prisonTileIndex={game.prisonTileIndex} />
+            <GameDialog open={tutorialPrompt} title="Показать, как играть?" onClose={() => setTutorialPrompt(false)} className="tutorial-prompt">
+                <p className="tutorial-copy">Четыре коротких примера: кубики, фишки, клетки и победа.</p><div className="tutorial-prompt-actions">
+                    <button type="button" className="button button-primary show-tutorial" onClick={() => { setProfile(value => ({ ...value,tutorialPromptSeen:true })); setTutorialPrompt(false); setStartAfterTutorial(true); setTutorialOpen(true); }}>Пройти обучение</button>
+                    <button type="button" className="button button-quiet skip-tutorial" onClick={() => { setProfile(value => ({ ...value,tutorialPromptSeen:true })); setTutorialPrompt(false); startLocalParty(); }}>Сразу играть</button>
+                </div>
+            </GameDialog>
+            <TutorialDialog open={tutorialOpen} onClose={() => { setTutorialOpen(false); setStartAfterTutorial(false); }} onComplete={() => {
+                setProfile(value => ({ ...value,tutorialCompleted:true,tutorialPromptSeen:true })); setTutorialOpen(false); setStartAfterTutorial(false);
+                if (startAfterTutorial) startLocalParty();
+            }} />
             <RulesDialog open={rulesOpen} onClose={() => setRulesOpen(false)} />
         </div>
     );

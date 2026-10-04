@@ -51,7 +51,7 @@ const movePrisonPiece = (state, piece) => {
 const moveJailPiece = (state, player, piece) => {
     const jailTile = state.tiles[piece.tile];
     consumeMoveValue(state, jailTile.needToRoll);
-    state.sizoMoveUsed = true;
+    piece.sizoMoveUsed = true;
 
     if (jailTile.nextTile !== undefined) {
         piece.tile = jailTile.nextTile;

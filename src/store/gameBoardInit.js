@@ -239,6 +239,7 @@ const createInitialPieces = (color) => {
             color,
             tile: null,
             progress: null,
+            sizoMoveUsed: false,
         })
     }
     return pieces;
@@ -303,7 +304,6 @@ export const createInitialGameState = (activeColors = PLAYER_COLORS) => {
         winners: [],
         loser: null,
         bonusRollPending: false,
-        sizoMoveUsed: false,
         turnMessage: 'Бросьте кубики.',
         dice: [null, null],
         diceRoll: null,

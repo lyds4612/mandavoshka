@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { getPieceMovePreview } from '../../store/logic/gameRules.js';
 
 export const pieceId = (color, index) => `${color}-${index}`;
-export const pieceElement = (root, id) => root?.querySelector(`.piece[data-piece-id="${id}"]`);
+export const pieceElement = (root, id) => [...(root?.querySelectorAll(`.piece[data-piece-id="${id}"]`) ?? [])].find(element => element.getClientRects().length);
 export const pieceRect = element => {
     if (!element || !element.getClientRects().length) return null;
     const rect = element.getBoundingClientRect();
@@ -11,6 +11,7 @@ export const pieceRect = element => {
 
 export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins, onAction, onReturn }) => {
     const [selectedId, setSelectedId] = useState(null);
+    const [pileTile, setPileTile] = useState(null);
     const [drag, setDrag] = useState(null);
     const [learnedDrag, setLearnedDrag] = useState(false);
     const gesture = useRef(null);
@@ -34,6 +35,7 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
     const commit = (id, move, origin) => {
         const selectReturnedPiece = move.tile === null && latest.current.game.moves.filter(value => value === 6).length > 1;
         setSelectedId(null);
+        setPileTile(null);
         if (origin) releaseOrigins.current.set(id, { ...origin, tile: move.tile });
         const result = latest.current.onAction(move);
         const finish = () => {
@@ -61,9 +63,10 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         if (gesture.current && (gesture.current.game !== game || !canControl)) cancelRef.current();
         if (selectedId && !available[selectedId]) setSelectedId(null);
     }, [game, canControl, available, selectedId]);
+    useEffect(() => { setPileTile(null); }, [game, canControl]);
     useEffect(() => {
-        const escape = event => { if (event.key === 'Escape') { cancelRef.current(); setSelectedId(null); } };
-        const blur = () => cancelRef.current();
+        const escape = event => { if (event.key === 'Escape') { cancelRef.current(); setSelectedId(null); setPileTile(null); } };
+        const blur = () => { cancelRef.current(); setPileTile(null); };
         window.addEventListener('keydown', escape);
         window.addEventListener('blur', blur);
         window.addEventListener('resize', blur);
@@ -80,12 +83,16 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
     const onPointerDown = event => {
         suppressClick.current = 0;
         if (event.button !== 0 || event.isPrimary === false || gesture.current || drag) return;
-        const source = event.target.closest('[data-piece-id]');
+        let source = event.target.closest('[data-piece-id]');
+        const cell = event.target.closest('[data-tile-index]');
+        if (!source && cell && selected?.piece.tile === Number(cell.dataset.tileIndex)) {
+            source = pieceElement(tableRef.current, selectedId);
+        }
         const id = source?.dataset.pieceId;
         const move = available[id];
         const rect = pieceRect(pieceElement(tableRef.current, id));
         if (!move || !rect) return;
-        const placement = (selected?.action === 'place' ? selected : !selectedId ? placing : null);
+        const placement = selected?.action === 'place' ? selected : null;
         const tapPlacement = placement?.targets.includes(move.piece.tile) ? placement : null;
         if (!tapPlacement) setSelectedId(selectedId === id ? null : id);
         source.closest('button')?.focus({ preventScroll: true });
@@ -169,7 +176,13 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
         }
     };
     const onTileClick = (tileIndex, clickedPieceId) => {
-        const move = Object.entries(available).find(([, value]) => value.piece.tile === tileIndex);
+        if (selected?.action === 'place' && selected.targets.includes(tileIndex)) { commit(selectedId, selected); return; }
+        if (clickedPieceId && !available[clickedPieceId] && !preview?.targets.includes(tileIndex)) return;
+        const moves = Object.entries(available).filter(([, value]) => value.piece.tile === tileIndex);
+        const move = moves.find(([id]) => id === clickedPieceId) ?? moves[0];
+        const differentMoves = moves.some(([, value]) => value.action !== move[1].action || value.tile !== move[1].tile
+            || value.path.join(',') !== move[1].path.join(','));
+        if (!clickedPieceId && differentMoves) { setPileTile(tileIndex); return; }
         if (tileIndex === game.prisonTileIndex) {
             const prisoner = clickedPieceId ? available[clickedPieceId]
                 : selected?.piece.tile === tileIndex ? selected : move?.[1];
@@ -177,7 +190,7 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
             return;
         }
         if (selected?.piece.tile === tileIndex) { setSelectedId(null); return; }
-        if (move && selected?.action === 'move') { setSelectedId(move[0]); return; }
+        if (move) { setSelectedId(move[0]); return; }
         if (preview?.targets.includes(tileIndex)) { commit(selectedId ?? pieceId(preview.color, preview.index), preview); return; }
         setSelectedId(move?.[0] ?? null);
     };
@@ -188,8 +201,16 @@ export const usePieceInteraction = ({ game, canControl, tableRef, releaseOrigins
     };
     return {
         selectedId, selectedTileIndex: selected?.piece.tile, available, drag,
+        pile: pileTile === null ? [] : game.pieces[player.color].map((piece, index) => ({ piece, index, id: pieceId(player.color,index), move: available[pieceId(player.color,index)] })).filter(item => item.piece.tile === pileTile),
+        closePile: () => setPileTile(null),
+        choosePiece: id => {
+            const move = available[id];
+            if (!move) return;
+            setPileTile(null);
+            if (move.tile === null) commit(id, move); else setSelectedId(id);
+        },
         targetTiles: preview?.targets ?? [], returnColor: preview?.tile === null ? preview.color : null,
-        onTileClick, onReserveClick, clearSelection: () => { cancel(); setSelectedId(null); },
+        onTileClick, onReserveClick, clearSelection: () => { cancel(); setSelectedId(null); setPileTile(null); },
         canPlace: Boolean(placing), placementTile: placing?.tile,
         placeFromHand: () => {
             const placement = selected?.action === 'place' ? selected : placing;

@@ -103,7 +103,7 @@ export const getRequiredMoveForPiece = (state, piece, player) => {
     }
 
     if (isPieceInJail(state, piece)) {
-        if (state.sizoMoveUsed) {
+        if (piece.sizoMoveUsed) {
             return null;
         }
 

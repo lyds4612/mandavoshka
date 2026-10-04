@@ -2,17 +2,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { MOBILE_VIEWPORT_QUERY } from '../../shared/mobileViewport.js';
 
 const fullscreenElement = () => document.fullscreenElement || document.webkitFullscreenElement;
-const LANDSCAPE_TABLE_QUERY = '(orientation: landscape) and (max-height: 600px)';
 
 export const useGameFullscreen = (root, enabled) => {
     const [mode, setMode] = useState('none');
     const [pending, setPending] = useState(false);
     const [landscape, setLandscape] = useState(() => window.matchMedia('(orientation: landscape)').matches);
-    const [landscapeTable, setLandscapeTable] = useState(() => window.matchMedia(MOBILE_VIEWPORT_QUERY).matches
-        && window.matchMedia(LANDSCAPE_TABLE_QUERY).matches);
+    const [mobileViewport, setMobileViewport] = useState(() => window.matchMedia(MOBILE_VIEWPORT_QUERY).matches);
     const orientationLocked = useRef(false);
     const active = mode !== 'none';
-    const fitted = enabled && (active || landscapeTable);
+    const fitted = enabled && (active || mobileViewport);
     const releaseOrientation = useCallback(() => {
         if (!orientationLocked.current) return;
         orientationLocked.current = false;
@@ -41,16 +39,23 @@ export const useGameFullscreen = (root, enabled) => {
     useEffect(() => {
         const orientation = window.matchMedia('(orientation: landscape)');
         const mobile = window.matchMedia(MOBILE_VIEWPORT_QUERY);
-        const compact = window.matchMedia(LANDSCAPE_TABLE_QUERY);
         const update = () => {
             setLandscape(orientation.matches);
-            setLandscapeTable(mobile.matches && compact.matches);
+            setMobileViewport(mobile.matches);
             if (!mobile.matches) void exit();
         };
-        const queries = [orientation, mobile, compact];
+        const queries = [orientation, mobile];
         update(); queries.forEach(query => query.addEventListener('change', update));
         return () => queries.forEach(query => query.removeEventListener('change', update));
     }, [exit]);
+    useEffect(() => {
+        const element = root.current;
+        const update = () => element?.style.setProperty('--game-viewport-height', `${window.visualViewport?.height ?? window.innerHeight}px`);
+        update();
+        window.addEventListener('resize', update);
+        window.visualViewport?.addEventListener('resize', update);
+        return () => { window.removeEventListener('resize', update); window.visualViewport?.removeEventListener('resize', update); };
+    }, [root]);
     useEffect(() => { if (!enabled) void exit(); }, [enabled, exit]);
     useEffect(() => { if (!active) releaseOrientation(); }, [active, releaseOrientation]);
     useEffect(() => {

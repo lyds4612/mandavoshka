@@ -1,4 +1,5 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { PLAYER_COLORS } from './gameBoardInit.js';
 
 const initialState = { mode: null, active: false, paused: false, humanColor: 'green', botCount: 3 };
 const localGameSlice = createSlice({
@@ -11,6 +12,9 @@ const localGameSlice = createSlice({
             if (mode === 'bots' && (!Number.isInteger(botCount) || botCount < 1 || botCount > 3)) return;
             state.mode = mode; state.botCount = mode === 'bots' ? botCount : 0;
             state.active = true; state.paused = false;
+            state.humanColor = PLAYER_COLORS.includes(payload?.humanColor) ? payload.humanColor : 'green';
+            state.playerName = typeof payload?.playerName === 'string' ? payload.playerName.slice(0,24) : '';
+            state.characterId = typeof payload?.characterId === 'string' ? payload.characterId : '';
         },
         pauseLocalGame(state) { if (state.active) state.paused = true; },
         resumeLocalGame(state) { if (state.active) state.paused = false; },

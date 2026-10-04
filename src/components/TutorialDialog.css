@@ -1,0 +1,18 @@
+.tutorial-progress { color: var(--muted); font-size: 12px; }
+.tutorial-copy, .tutorial-cell-rule { margin: 12px 0 16px; font-size: 14px; line-height: 1.6; }
+.tutorial-actions { display: flex; justify-content: space-between; gap: 8px; margin-top: 16px; }
+.tutorial-dice { display: flex; align-items: center; justify-content: center; gap: 16px; width: 100%; min-height: 96px; margin: 16px 0; border: 1px solid #b99a6366; border-radius: 12px; background: #ffffff08; cursor: pointer; perspective: 400px; }
+.tutorial-cube { display: grid; place-items: center; width: 56px; height: 56px; border-radius: 8px; color: #221c13; background: #f7e6be; font: 48px/1 'Segoe UI Symbol', sans-serif; box-shadow: 0 4px 0 #af986e, 0 8px 16px #0008; }
+.tutorial-dice.is-thrown .tutorial-cube { animation: tutorial-roll 400ms ease-out; }
+@keyframes tutorial-roll { from { transform: translateY(-16px) rotateX(180deg) rotateZ(90deg); } to { transform: none; } }
+.tutorial-track { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 4px; margin: 16px 0; }
+.tutorial-track button { display: grid; place-items: center; min-height: 56px; border: 1px solid #b99a63; border-radius: 8px; color: #221c13; background: #f7e6be; font-size: 20px; cursor: pointer; }
+.tutorial-track button:disabled { opacity: 1; cursor: default; }
+.tutorial-track .is-target { outline: 2px dashed #f8d484; outline-offset: 2px; }
+.tutorial-token { width: 32px; height: 32px; border-radius: 50%; border: 2px solid #d4f09e; background: radial-gradient(circle at 30% 25%, #d4f09e, #4f7e29 65%); box-shadow: 0 2px 4px #0007; }
+.tutorial-cells { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.tutorial-cells button { display: grid; gap: 4px; min-height: 64px; padding: 8px; border: 1px solid #b99a6366; border-radius: 8px; background: #ffffff08; color: var(--ink); cursor: pointer; }
+.tutorial-cells button[aria-pressed='true'] { border-color: #ffe5ac; background: #ffffff16; }
+.tutorial-cells strong { font-size: 20px; }
+.tutorial-cells span { font-size: 12px; }
+.tutorial-prompt-actions { display: flex; flex-wrap: wrap; gap: 8px; }

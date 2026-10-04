@@ -15,7 +15,7 @@
 #game-board { position: relative; width: 100%; aspect-ratio: 1; isolation: isolate; border: 1px solid #54432d; container-type: inline-size; }
 .board-artwork, .board-grid, .alley-arrows { position: absolute; inset: 0; width: 100%; height: 100%; }
 .board-artwork { z-index: 0; }
-#game-board::after { content: ''; position: absolute; inset: 0; background: url('../assets/paper-grain.svg'); opacity: .48; pointer-events: none; z-index: 4; mix-blend-mode: multiply; }
+#game-board::after { content: ''; position: absolute; inset: 0; background: url('../assets/paper-grain.svg'); opacity: .48; pointer-events: none; z-index: 1; mix-blend-mode: multiply; }
 .board-grid { display: grid; grid-template-columns: repeat(13, minmax(0, 1fr)); grid-template-rows: repeat(13, minmax(0, 1fr)); z-index: 2; }
 .board-suit { font-family: Georgia, 'Times New Roman', serif; font-size: 230px; fill: #22251d; }
 .board-quarter-red .board-suit, .board-quarter-orange .board-suit { fill: #a82e24; }
@@ -40,7 +40,7 @@
 #game-board .cell.movable:hover { background-color: #fff1c9; box-shadow: inset 0 0 0 3px #a77427; }
 #game-board .cell.selected { background-color: #fce9ab; box-shadow: inset 0 0 0 3px #875b1a, inset 0 0 16px #be963d66; }
 #game-board .cell:focus-visible { outline: 3px solid #83551d; outline-offset: -3px; z-index: 3; }
-.cell.occupied .cell-label { opacity: .2; }
+.cell.occupied .cell-label { position: absolute; top: 2px; left: 2px; z-index: 6; font-size: .6em; opacity: 1; text-shadow: 0 1px #fff4dc; }
 .piece {
     display: inline-block; flex-shrink: 0; width: 32px; aspect-ratio: 1; border-radius: 50%; border: 1px solid var(--player-light);
     background: radial-gradient(circle at 32% 25%, var(--player-light), var(--player-accent) 42%, var(--player-dark) 100%);
@@ -48,7 +48,8 @@
 }
 .tile-pieces { position: absolute; inset: 9%; display: flex; flex-wrap: wrap; align-content: center; align-items: center; justify-content: center; gap: 4%; }
 #game-board .piece { width: 45%; max-width: 28px; }
-.tile-pieces[data-piece-count='1'] .piece { width: 70%; max-width: 36px; }
+#game-board .cell:not(.prison) .tile-pieces:not([data-piece-count='1']) .piece { width: min(45%, calc((100% - (var(--piece-columns) - 1) * 4%) / var(--piece-columns))); }
+.piece-count { position: absolute; right: -1px; bottom: -1px; z-index: 7; display: grid; place-items: center; min-width: 14px; height: 14px; padding: 0 2px; border: 1px solid #f9efd6; border-radius: 4px; color: #fff4dc; background: #192b32; font: 700 10px/1 'Segoe UI', sans-serif; pointer-events: none; }
 #game-board .cell.prison {
     z-index: 3; margin: 3%; clip-path: polygon(30% 0, 70% 0, 100% 30%, 100% 70%, 70% 100%, 30% 100%, 0 70%, 0 30%);
     background: #51412c; box-shadow: none;
@@ -59,8 +60,7 @@
 .prison-art > span { font-size: 1.65cqw; text-transform: uppercase; letter-spacing: .14em; margin-top: -12%; }
 .prison.occupied .prison-art { opacity: .18; }
 .prison .tile-pieces { inset: 16%; gap: 6%; }
-#game-board .prison .piece { width: 19%; max-width: 28px; }
-#game-board .prison .tile-pieces[data-piece-count='1'] .piece { width: 28%; }
+#game-board .cell.prison .tile-pieces .piece { width: 19%; max-width: 28px; }
 #game-board .cell.prison.movable { background: #9b742d; }
 #game-board .cell.prison.selected { background: #c59332; }
 @media (max-width: 980px) {

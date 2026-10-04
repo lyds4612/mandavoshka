@@ -58,8 +58,8 @@ const prepareExtraRoll = (state) => {
 const finishTurn = (state) => {
     clearRolledValues(state);
     state.bonusRollPending = false;
+    state.pieces[state.players[state.currentPlayerIndex].color].forEach(piece => { piece.sizoMoveUsed = false; });
     changePlayer(state);
-    state.sizoMoveUsed = false;
     state.canRoll = true;
     state.canMove = false;
     state.canPlace = false;
