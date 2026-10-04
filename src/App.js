@@ -7,6 +7,7 @@ import PlayerCard from './components/PlayerCard';
 import RulesDialog from './components/RulesDialog';
 import MultiplayerPanel from './components/MultiplayerPanel';
 import GameMenu from './components/GameMenu';
+import SoundSettings from './components/SoundSettings';
 import LocalGameSetup from './components/LocalGameSetup';
 import MobilePlayers from './components/MobilePlayers';
 import GameResults from './components/GameResults';
@@ -78,6 +79,7 @@ const App = () => {
     const fullscreen = useGameFullscreen(appRef, showTable && gamePhase === 'playing');
     const releaseOrigins = useRef(new Map());
     const sound = useGameSounds({ game, scope: `${network.mode}:${network.room?.code ?? ''}`, releaseOrigins,
+        musicActive: !(showTable && gamePhase === 'playing') && network.recoveryStatus === 'ready',
         active: showTable && gamePhase === 'playing' && (network.mode === 'local' || connected) });
     const motion = usePieceMotion({ game, tableRef, releaseOrigins, scope: `${network.mode}:${network.room?.code ?? ''}` });
     const interaction = usePieceInteraction({ game, canControl, tableRef, releaseOrigins, onReturn: motion.returnDrag,
@@ -189,13 +191,7 @@ const App = () => {
                 <button type="button" className="mobile-menu-toggle" aria-label="Меню игры" aria-controls="game-settings" aria-expanded={menuOpen} onClick={() => setMenuOpen(open => !open)}><span aria-hidden="true">{menuOpen ? '×' : '☰'}</span></button>
                 <nav id="game-settings" className={`table-navigation ${menuOpen ? 'is-open' : ''}`} aria-label="Меню игры">
                     <ThemeSwitcher theme={visualTheme} onChange={theme => { setVisualTheme(theme); setMenuOpen(false); }} />
-                    <button type="button" className="button button-quiet sound-toggle" onClick={sound.toggle} aria-pressed={sound.enabled}
-                        aria-label={sound.enabled ? 'Выключить звук' : 'Включить звук'} title={sound.enabled ? 'Выключить звук' : 'Включить звук'}>
-                        <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" strokeWidth="1.8" aria-hidden="true">
-                            <path d="M10 5L5 9H2V15H5L10 19Z" />
-                            {sound.enabled ? <><path d="M14 8Q18 12 14 16M17 5Q24 12 17 19" /></> : <path d="M15 9L21 15M21 9L15 15" />}
-                        </svg><span className="sound-toggle-label">Звук: {sound.enabled ? 'вкл' : 'выкл'}</span>
-                    </button>
+                    <SoundSettings sound={sound} navigationOpen={menuOpen} />
                     <button type="button" className="button button-quiet open-rules" onClick={() => { setRulesOpen(true); setMenuOpen(false); }}>Правила</button>
                     {showTable && network.mode === 'local' && <button type="button" className="button button-quiet open-game-menu" onClick={handleOpenMenu}>В меню</button>}
                     {showTable && <button type="button" className="button button-quiet reset-game" disabled={!canRestart} onClick={() => handleReset()}><span aria-hidden="true">↻</span> Новая партия</button>}
@@ -207,7 +203,7 @@ const App = () => {
                 {notice.canRetry && <button type="button" className="button button-secondary reconnect-room" onClick={() => dispatch({ type: 'online/reconnect' })}>Подключиться сейчас</button>}
             </div>}
             {!networkScreen && screen === 'menu' && <GameMenu onChoose={handleChooseMode} canContinue={local.active}
-                mode={local.mode} onContinue={() => { dispatch(resumeLocalGame()); setScreen('playing'); }} />}
+                sound={sound} mode={local.mode} onContinue={() => { dispatch(resumeLocalGame()); setScreen('playing'); }} />}
             {!networkScreen && screen === 'setup' && setupMode !== 'online' && <LocalGameSetup mode={setupMode} botCount={botCount} onBotCountChange={setBotCount} characterId={characterId} onCharacterChange={handleCharacterChange}
                 name={playerName} onNameChange={setPlayerName} roster={localRoster.slice(0, setupMode === 'bots' ? botCount + 1 : 4)} onRandomize={() => setLocalRoster(createLocalRoster(characterId))}
                 onRosterChange={(color, id) => setLocalRoster(roster => selectLocalCharacter(roster, id, color))}

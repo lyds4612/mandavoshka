@@ -2,7 +2,8 @@ import { createSlice } from '@reduxjs/toolkit';
 import { hasPlayerFinished, isGameOver } from './logic/gameRules.js';
 
 const initialState = { mode: 'local', status: 'idle', room: null, playerId: null, inviteOrigin: null, pending: false, error: '',
-    reconnectAttempt: 0, sessionReplaced: false, sessionExpired: false, recoveryStatus: 'loading' };
+    reconnectAttempt: 0, sessionReplaced: false, sessionExpired: false, recoveryStatus: 'loading',
+    rooms: [], roomsStatus: 'idle', roomsError: '' };
 const multiplayerSlice = createSlice({
     name: 'multiplayer', initialState,
     reducers: {
@@ -21,11 +22,15 @@ const multiplayerSlice = createSlice({
         },
         requestPending(state, { payload }) { state.pending = payload; if (payload) state.error = ''; },
         networkError(state, { payload }) { state.error = payload; state.pending = false; },
+        roomsLoading(state) { state.roomsStatus = 'loading'; state.roomsError = ''; },
+        roomsReceived(state, { payload }) { state.rooms = payload; state.roomsStatus = 'ready'; state.roomsError = ''; },
+        roomsFailed(state, { payload }) { state.roomsStatus = 'error'; state.roomsError = payload; },
         returnToLocal() { return initialState; },
     },
 });
 export const { connectionStatus, restoringSession, sessionJoined, roomReceived, requestPending, networkError, returnToLocal,
-    reconnecting, sessionReplaced, sessionExpired, recoveryLoading, recoveryFinished, recoveryFailed } = multiplayerSlice.actions;
+    reconnecting, sessionReplaced, sessionExpired, recoveryLoading, recoveryFinished, recoveryFailed,
+    roomsLoading, roomsReceived, roomsFailed } = multiplayerSlice.actions;
 export default multiplayerSlice.reducer;
 
 export const selectMultiplayer = state => state.multiplayer;

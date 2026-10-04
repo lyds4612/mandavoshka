@@ -7,6 +7,7 @@ import {
     connectionStatus, restoringSession, sessionJoined, roomReceived,
     requestPending, networkError, returnToLocal,
     reconnecting, sessionReplaced, sessionExpired, recoveryLoading, recoveryFinished, recoveryFailed,
+    roomsLoading, roomsReceived, roomsFailed,
 } from '../store/multiplayerSlice.js';
 
 const SESSION_KEY = 'mandavoshka.online.session.v1';
@@ -46,6 +47,8 @@ export const multiplayerMiddleware = api => {
     let recoveryTimer = null;
     let checkingRecovery = false;
     let automaticRecovery = true;
+    let watchingRooms = false;
+    let roomsRequest = 0;
     const applySnapshot = snapshot => {
         if (!session || !snapshot || snapshot.code !== session.roomCode) return;
         const current = api.getState().multiplayer.room;
@@ -85,12 +88,16 @@ export const multiplayerMiddleware = api => {
             reconnectionDelay: 500, reconnectionDelayMax: 3000, randomizationFactor: .25, timeout: 6000,
             closeOnBeforeunload: true });
         socket.on('room:state', applySnapshot);
+        socket.on('rooms:state', result => {
+            if (watchingRooms && !session) api.dispatch(roomsReceived(result.rooms));
+        });
         socket.io.on('reconnect_attempt', attempt => { if (session) api.dispatch(reconnecting(attempt)); });
         socket.on('connect', async () => {
             if (!session) {
                 const network = api.getState().multiplayer;
                 api.dispatch(connectionStatus(network.mode === 'online' ? 'error' : 'connected'));
                 refreshRecoveries();
+                if (watchingRooms) refreshRooms();
                 return;
             }
             const connectionGeneration = generation;
@@ -104,9 +111,11 @@ export const multiplayerMiddleware = api => {
         socket.on('disconnect', reason => {
             generation += 1;
             catalogRequest += 1;
+            roomsRequest += 1;
             const replaced = api.getState().multiplayer.sessionReplaced;
             api.dispatch(session && !replaced ? reconnecting() : connectionStatus('disconnected'));
             api.dispatch(requestPending(false));
+            if (watchingRooms) api.dispatch(roomsFailed('Связь потеряна. Список обновится после подключения.'));
             if (!session && api.getState().multiplayer.mode === 'local') api.dispatch(readSavedSessions().length ? recoveryFailed() : recoveryFinished());
             if (reason === 'io server disconnect' && session && !replaced) {
                 const reconnectGeneration = generation;
@@ -121,6 +130,7 @@ export const multiplayerMiddleware = api => {
                 if (api.getState().multiplayer.pending) api.dispatch(networkError('Не удалось подключиться к серверу игры. Проверьте соединение.'));
             }
             api.dispatch(requestPending(false));
+            if (watchingRooms) api.dispatch(roomsFailed('Не удалось загрузить комнаты. Проверьте соединение и попробуйте ещё раз.'));
         });
         socket.on('session:replaced', () => {
             api.dispatch(sessionReplaced());
@@ -145,6 +155,19 @@ export const multiplayerMiddleware = api => {
         try { await callback(currentGeneration); }
         catch (error) { if (currentGeneration === generation) api.dispatch(networkError(error.message || 'Не удалось получить ответ сервера.')); }
         finally { if (currentGeneration === generation) api.dispatch(requestPending(false)); }
+    };
+    const refreshRooms = async () => {
+        if (!watchingRooms || session) return;
+        const requestId = ++roomsRequest;
+        api.dispatch(roomsLoading());
+        try {
+            await connect();
+            if (!watchingRooms || session || requestId !== roomsRequest) return;
+            const result = await request('rooms:watch', {});
+            if (watchingRooms && !session && requestId === roomsRequest) api.dispatch(roomsReceived(result.rooms));
+        } catch (error) {
+            if (watchingRooms && !session && requestId === roomsRequest) api.dispatch(roomsFailed(error.message));
+        }
     };
     const clearConnection = () => {
         generation += 1;
@@ -203,11 +226,15 @@ export const multiplayerMiddleware = api => {
                 .catch(error => reportResumeError(error, savedSession, reconnectGeneration));
         } else ensureSocket().connect();
     };
+    const restoreOnlineView = () => {
+        if (session) reconnect();
+        else { refreshRecoveries(); if (watchingRooms) refreshRooms(); }
+    };
     window.addEventListener('pagehide', () => socket?.disconnect());
-    window.addEventListener('pageshow', event => { if (event.persisted) session ? reconnect() : refreshRecoveries(); });
+    window.addEventListener('pageshow', event => { if (event.persisted) restoreOnlineView(); });
     window.addEventListener('offline', () => { socket?.disconnect(); if (session) { api.dispatch(reconnecting()); api.dispatch(requestPending(false)); } });
-    window.addEventListener('online', () => session ? reconnect() : refreshRecoveries());
-    window.addEventListener('focus', () => { if (!session) refreshRecoveries(); });
+    window.addEventListener('online', restoreOnlineView);
+    window.addEventListener('focus', () => { if (!session) restoreOnlineView(); });
     window.addEventListener('storage', event => { if (event.key === 'mandavoshka.online.recovery.v1' && !session) refreshRecoveries(); });
     setTimeout(() => {
         if (session) {
@@ -219,6 +246,13 @@ export const multiplayerMiddleware = api => {
 
     const commands = { 'game/rollDice': 'roll', 'game/placePiece': 'place', 'game/movePiece': 'move', 'game/finishDiceRoll': 'skip' };
     return next => action => {
+        if (action.type === 'online/watchRooms') { watchingRooms = true; return refreshRooms(); }
+        if (action.type === 'online/refreshRooms') return refreshRooms();
+        if (action.type === 'online/unwatchRooms') {
+            watchingRooms = false; roomsRequest += 1;
+            if (socket?.connected) request('rooms:unwatch', {}).catch(() => {});
+            return;
+        }
         if (action.type === 'online/create' || action.type === 'online/join') {
             return perform(async operationGeneration => {
                 await connect();

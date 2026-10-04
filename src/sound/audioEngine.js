@@ -1,3 +1,5 @@
+import { createMenuMusic } from './menuMusic.js';
+
 const VOLUME = 0.18;
 
 export const synthesizeSound = (context, output, type, at, track = () => {}, strength = 1) => {
@@ -41,8 +43,9 @@ export const synthesizeSound = (context, output, type, at, track = () => {}, str
     }
 };
 
-export const createAudioEngine = () => {
-    let context = null, output = null, enabled = true;
+export const createAudioEngine = ({ musicUrl, onMusicState } = {}) => {
+    let context = null, output = null, master = null, music = null, enabled = true, volume = 1;
+    let musicWanted = false, musicVolume = .4, userInteracted = false;
     const voices = new Map();
     let pending = [];
     const stop = group => {
@@ -53,8 +56,15 @@ export const createAudioEngine = () => {
             voices.delete(source);
         });
     };
+    const updateMusic = () => music?.setPlaying(musicWanted && enabled && volume > 0 && musicVolume > 0
+        && userInteracted && !document.hidden && context?.state === 'running');
+    const updateVolume = () => {
+        if (!master) return;
+        master.gain.cancelScheduledValues(context.currentTime);
+        master.gain.setTargetAtTime(enabled ? volume : 0, context.currentTime, .02);
+    };
     const flush = () => {
-        if (!enabled || !context || context.state !== 'running' || document.hidden) return;
+        if (!enabled || volume === 0 || !context || context.state !== 'running' || document.hidden) return;
         const batches = pending;
         pending = [];
         batches.forEach(({ events, group, queuedAt }) => {
@@ -73,18 +83,22 @@ export const createAudioEngine = () => {
             });
         });
     };
-    const unlock = () => {
-        if (!enabled || document.hidden) return;
+    const onStateChange = () => { flush(); updateMusic(); };
+    const unlock = ({ userGesture = false } = {}) => {
+        if (userGesture) userInteracted = true;
+        if (!enabled || volume === 0 || document.hidden) return;
         const AudioContext = window.AudioContext || window.webkitAudioContext;
         if (!AudioContext) return;
         try {
             if (!context || context.state === 'closed') {
-                context = new AudioContext(); output = context.createGain();
-                output.gain.value = VOLUME; output.connect(context.destination);
-                context.addEventListener('statechange', flush);
+                music?.dispose(); context?.removeEventListener('statechange', onStateChange);
+                context = new AudioContext(); master = context.createGain(); master.gain.value = volume; master.connect(context.destination);
+                output = context.createGain(); output.gain.value = VOLUME; output.connect(master);
+                if (musicUrl) { music = createMenuMusic(context, master, musicUrl, onMusicState); music.setVolume(musicVolume); }
+                context.addEventListener('statechange', onStateChange);
             }
-            if (context.state !== 'running') context.resume().then(flush).catch(() => {});
-            else flush();
+            if (context.state !== 'running') context.resume().then(onStateChange).catch(() => {});
+            else onStateChange();
         } catch { /* Sound availability never prevents a move. */ }
     };
     return {
@@ -92,11 +106,16 @@ export const createAudioEngine = () => {
         stop,
         setEnabled(value) {
             enabled = value;
-            if (output) output.gain.value = enabled ? VOLUME : 0;
+            updateVolume(); updateMusic();
             if (!enabled) stop();
         },
+        setVolume(value) { volume = Math.max(0, Math.min(1, value)); updateVolume(); updateMusic(); if (!volume) stop(); },
+        setMusicVolume(value) { musicVolume = Math.max(0, Math.min(1, value)); music?.setVolume(musicVolume); updateMusic(); },
+        setMenuMusic(value) { musicWanted = value; updateMusic(); },
+        retryMusic() { music?.retry(); },
+        visibilityChanged() { if (document.hidden) { stop(); updateMusic(); } else unlock(); },
         play(events, group = 'pieces') {
-            if (!enabled || document.hidden || !events.length) return;
+            if (!enabled || volume === 0 || document.hidden || !events.length) return;
             unlock();
             if (!context) return;
             pending.push({ events: events.slice(0, 16), group, queuedAt: performance.now() });
@@ -105,11 +124,12 @@ export const createAudioEngine = () => {
         },
         dispose() {
             stop();
+            music?.dispose(); music = null;
             if (context) {
-                context.removeEventListener('statechange', flush);
+                context.removeEventListener('statechange', onStateChange);
                 if (context.state !== 'closed') context.close().catch(() => {});
             }
-            context = null; output = null;
+            context = null; output = null; master = null;
         },
     };
 };

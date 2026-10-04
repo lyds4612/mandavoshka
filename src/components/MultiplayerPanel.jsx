@@ -9,6 +9,7 @@ import { getCharacter } from '../shared/characters';
 import CharacterPicker from './CharacterPicker';
 import CharacterPortrait from './CharacterPortrait';
 import BotCountPicker from './BotCountPicker';
+import RoomBrowser from './RoomBrowser';
 import './MultiplayerPanel.css';
 
 const MultiplayerPanel = ({ characterId, onCharacterChange, name, onNameChange, onBack }) => {
@@ -90,11 +91,12 @@ const MultiplayerPanel = ({ characterId, onCharacterChange, name, onNameChange, 
                 </div>
             ) : !online ? (
                 <div className="online-setup">
-                    <div className="game-setup-heading"><div><span className="eyebrow">Онлайн · 2–4 игрока</span><h2>Соберите друзей за столом</h2></div>
+                    <div className="game-setup-heading"><div><span className="eyebrow">Онлайн · 2–4 игрока</span><h2>Выберите стол или откройте свой</h2></div>
                         <button type="button" className="button button-quiet back-game-menu" onClick={onBack}>← В меню</button></div>
                     <form className="online-form" onSubmit={event => { event.preventDefault(); dispatch({ type: 'online/join', payload: { code, name, characterId } }); }}>
                         <CharacterPicker value={characterId} onChange={onCharacterChange} disabled={network.pending} />
                         {nicknameField}
+                        <RoomBrowser name={name} characterId={characterId} />
                         <div className="online-create-options"><BotCountPicker context="create" value={botCount} onChange={setBotCount} disabled={network.pending} hint="Остальные места останутся свободными для друзей." />
                         <button type="button" className="button button-secondary create-room" disabled={!name.trim() || !characterId || network.pending} onClick={() => dispatch({ type: 'online/create', payload: { name, characterId, botCount } })}>{network.pending ? 'Подключаем…' : 'Создать комнату'}</button></div>
                         <label>Код комнаты<input className="online-code" autoComplete="off" maxLength={6} value={code} onChange={event => setCode(event.target.value.toUpperCase().replace(/[^A-Z2-9]/g, ''))} placeholder="ABC123" disabled={network.pending} /></label>

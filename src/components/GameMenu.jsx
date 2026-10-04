@@ -1,12 +1,13 @@
 import './GameMenu.css';
+import SoundSettings from './SoundSettings';
 
 const MODES = [
     { id: 'bots', title: 'С ботами', caption: 'Ваша партия', description: 'Выберите героя и число соперников за этим столом.', icon: '♟', badge: '1 игрок · 1–3 бота' },
     { id: 'manual', title: 'Без ботов', caption: 'За одним экраном', description: 'Играйте с друзьями рядом или управляйте всеми четырьмя героями сами.', icon: '♣', badge: 'Все ходы вручную' },
-    { id: 'online', title: 'Онлайн', caption: 'Вместе на расстоянии', description: 'Создайте комнату или войдите по коду. Пригласите друзей и добавьте ботов.', icon: '◎', badge: '2–4 места · друзья и боты' },
+    { id: 'online', title: 'Онлайн', caption: 'Вместе на расстоянии', description: 'Выберите комнату в списке или создайте свою. Играйте с людьми и ботами.', icon: '◎', badge: '2–4 места · друзья и боты' },
 ];
 
-const GameMenu = ({ onChoose, canContinue, onContinue, mode }) => (
+const GameMenu = ({ onChoose, canContinue, onContinue, mode, sound }) => (
     <main className="game-menu" aria-label="Главное меню">
         <div className="game-menu-intro"><span className="eyebrow">Ваш стол ждёт</span><h2>С кем сыграем?</h2><p>Выберите игру, а затем — своего персонажа.</p></div>
         {canContinue && <button type="button" className="continue-local-game" onClick={onContinue}>
@@ -19,6 +20,7 @@ const GameMenu = ({ onChoose, canContinue, onContinue, mode }) => (
                 <span className="game-mode-footer"><span>{choice.badge}</span><span aria-hidden="true">→</span></span>
             </button>
         ))}</div>
+        <SoundSettings sound={sound} inline />
         <p className="game-menu-note">Знакомый стол, семь героев, одна цель — завести фишки в хату.</p>
     </main>
 );

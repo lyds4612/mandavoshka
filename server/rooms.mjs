@@ -12,6 +12,7 @@ const fail = (code, message) => { throw Object.assign(new Error(message), { code
 const hashToken = token => createHash('sha256').update(token).digest('hex');
 const roomCode = () => Array.from({ length: 6 }, () => 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789'[randomInt(32)]).join('');
 const normalizeCode = value => typeof value === 'string' ? value.trim().toUpperCase() : '';
+const ROOM_DIRECTORY = 'public-room-directory';
 const normalizeName = value => {
     if (typeof value !== 'string') fail('BAD_NAME', 'Введите имя игрока.');
     const name = value.trim().replace(/[\u0000-\u001f\u007f]/g, '');
@@ -44,6 +45,21 @@ export const registerRooms = (io, {
         timer.unref(); timers.add(timer); return timer;
     };
     const cancel = timer => { clearTimeout(timer); timers.delete(timer); };
+    const listRooms = () => Array.from(rooms.values())
+        .filter(room => room.phase === 'waiting' && room.players.some(player => !player.isBot && player.socketId))
+        .sort((a, b) => b.createdAt - a.createdAt || a.code.localeCompare(b.code))
+        .map(room => {
+            const host = room.players.find(player => player.id === room.hostId);
+            return { code: room.code, host: { name: host.name, characterId: host.characterId }, capacity: MAX_ROOM_PLAYERS,
+                freeSeats: MAX_ROOM_PLAYERS - room.players.length,
+                players: room.players.map(player => ({ name: player.name, characterId: player.characterId, isBot: Boolean(player.isBot), connected: Boolean(player.isBot || player.socketId) })) };
+        });
+    const publishDirectory = room => {
+        const listed = rooms.get(room.code) === room && room.phase === 'waiting' && room.players.some(player => !player.isBot && player.socketId);
+        if (!listed && !room.directoryListed) return;
+        room.directoryListed = listed;
+        io.to(ROOM_DIRECTORY).emit('rooms:state', { rooms: listRooms() });
+    };
     const isPaused = room => room.phase === 'playing' && !isGameOver(room.game)
         && room.players.some(player => !player.isBot && !player.socketId && !hasPlayerFinished(room.game, player.color));
     const snapshot = room => ({
@@ -64,6 +80,7 @@ export const registerRooms = (io, {
         }
         room.revision += 1; room.updatedAt = Date.now();
         io.to(room.code).emit('room:state', snapshot(room));
+        publishDirectory(room);
         scheduleBot(room);
     };
     const getMembership = socket => {
@@ -112,6 +129,7 @@ export const registerRooms = (io, {
         cancel(room.rollTimer); cancel(room.botTimer);
         room.players.forEach(player => cancel(player.disconnectTimer));
         rooms.delete(room.code);
+        publishDirectory(room);
     };
     const randomCharacter = room => {
         const available = CHARACTERS.filter(character => !room.players.some(player => player.characterId === character.id));
@@ -133,6 +151,7 @@ export const registerRooms = (io, {
         cancel(player.disconnectTimer); player.disconnectTimer = null;
         player.socketId = socket.id; player.disconnectedAt = null;
         socket.data.roomCode = room.code; socket.data.playerId = player.id;
+        socket.leave(ROOM_DIRECTORY);
         socket.join(room.code);
         if (previousSocket && previousSocket.id !== socket.id) {
             previousSocket.emit('session:replaced'); previousSocket.disconnect(true);
@@ -196,7 +215,7 @@ export const registerRooms = (io, {
             if (++limit.count > 10) fail('RATE_LIMIT', 'Слишком много новых комнат. Подождите минуту.');
             creationLimits.set(address, limit);
             let code; do { code = roomCode(); } while (rooms.has(code));
-            const room = { code, players: [], hostId: null, phase: 'waiting', revision: 0, game: createInitialGameState(), seen: new Map(), updatedAt: Date.now(), rollTimer: null, botTimer: null };
+            const room = { code, players: [], hostId: null, phase: 'waiting', revision: 0, game: createInitialGameState(), seen: new Map(), createdAt: Date.now(), updatedAt: Date.now(), rollTimer: null, botTimer: null };
             rooms.set(code, room);
             return addPlayer(socket, room, validName, validCharacter, validBotCount);
         });
@@ -209,6 +228,14 @@ export const registerRooms = (io, {
             if (room.phase !== 'waiting') fail('ALREADY_STARTED', 'Партия уже началась.');
             if (room.players.length >= MAX_ROOM_PLAYERS) fail('ROOM_FULL', 'Все четыре места заняты.');
             return addPlayer(socket, room, validName, validCharacter);
+        });
+        onRequest('rooms:watch', () => {
+            socket.join(ROOM_DIRECTORY);
+            return { rooms: listRooms() };
+        });
+        onRequest('rooms:unwatch', () => {
+            socket.leave(ROOM_DIRECTORY);
+            return {};
         });
         onRequest('room:resume', ({ code, token }) => {
             const room = rooms.get(normalizeCode(code));
