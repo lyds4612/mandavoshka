@@ -1,0 +1,9 @@
+.bot-count-picker { grid-column: 1 / -1; min-width: 0; margin: 0; padding: 0; border: 0; }
+.bot-count-picker legend { margin-bottom: 8px; padding: 0; color: var(--ink); font-size: 14px; font-weight: 600; }
+.bot-count-options { display: flex; gap: 8px; }
+.bot-count-options button { display: grid; place-items: center; width: 48px; min-height: 44px; padding: 8px; border: 1px solid #b99a635c; border-radius: 6px; background: #17110c; color: var(--muted); font: 600 16px 'Segoe UI', sans-serif; cursor: pointer; touch-action: manipulation; }
+.bot-count-options button[aria-pressed='true'] { border-color: var(--gold-light); background: #b99a6326; color: var(--gold-light); box-shadow: inset 0 0 0 1px var(--gold-light); }
+.bot-count-options button:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 3px; }
+.bot-count-options button:disabled { opacity: .4; cursor: default; }
+.bot-count-picker p { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.bot-count-picker[data-context='room'] { margin-top: 16px; }

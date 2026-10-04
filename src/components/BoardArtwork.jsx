@@ -30,7 +30,10 @@ const BoardArtwork = ({ theme = 'classic', activeColors }) => {
                     </g>
                 </pattern>
                 {Object.entries(colors).map(([color, [light, dark]]) => (
-                    <radialGradient key={color} id={`${prefix}-${color}`}><stop stopColor={light} /><stop offset="1" stopColor={dark} /></radialGradient>
+                    <radialGradient key={color} id={`${prefix}-${color}`}>
+                        <stop stopColor={`color-mix(in srgb, var(--seat-${color}-accent, ${light}) 25%, ${light})`} />
+                        <stop offset="1" stopColor={`color-mix(in srgb, var(--seat-${color}-accent, ${dark}) 30%, ${dark})`} />
+                    </radialGradient>
                 ))}
                 <pattern id={`${prefix}-scratches`} width="200" height="200" patternUnits="userSpaceOnUse">
                     <g fill="none" stroke="#273839" strokeWidth="1.5" opacity=".2">

@@ -33,7 +33,11 @@ export const selectIsOnline = state => state.multiplayer.mode === 'online';
 export const canControlGame = state => {
     if (isGameOver(state.game)) return false;
     const network = state.multiplayer;
-    if (!network || network.mode === 'local') return true;
+    if (!network || network.mode === 'local') {
+        const local = state.localGame;
+        return !local || (local.active && !local.paused && (local.mode !== 'bots'
+            || state.game.players[state.game.currentPlayerIndex].color === local.humanColor));
+    }
     if (network.status !== 'connected' || network.sessionExpired || network.sessionReplaced || network.pending || network.room?.phase !== 'playing' || network.room.paused) return false;
     const me = network.room.players.find(player => player.id === network.playerId);
     return me?.color === state.game.players[state.game.currentPlayerIndex].color && !hasPlayerFinished(state.game, me.color);

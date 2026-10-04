@@ -15,7 +15,7 @@ const pieceLocation = (piece, tiles, prisonTileIndex) => {
 };
 
 const PlayerCard = ({ player, pieces, currentPlayerColor, tiles, prisonTileIndex, won, lost, gameOver, interaction, isMyTurn, isRolling, canRoll,
-    displayName, characterId, connected = true, phase = 'playing', paused = false, isMe = false, mobileFocus, boardZoomed }) => {
+    displayName, characterId, connected = true, phase = 'playing', paused = false, isMe = false, isBot = false, mobileFocus, boardZoomed }) => {
     const theme = PLAYER_THEMES[player.color];
     const active = connected && phase === 'playing' && !paused && !gameOver && !won && player.color === currentPlayerColor;
     const name = displayName ?? theme.name;
@@ -26,13 +26,13 @@ const PlayerCard = ({ player, pieces, currentPlayerColor, tiles, prisonTileIndex
     const hint = active && isMyTurn && connected
         ? isRolling ? 'Кубики летят…' : Object.keys(interaction.available).length > 0 ? interaction.hint
             : canRoll ? boardZoomed ? 'Двигайте поле пальцем. Нажмите для броска' : 'Нажмите на поле для броска' : ''
-        : '';
+        : active && isBot ? isRolling ? 'Бросает кубики…' : 'Выбирает ход…' : '';
     return (
         <section className={`player-card player-card-${theme.position} ${active ? 'is-active' : ''} ${!connected ? 'is-disconnected' : ''} ${mobileFocus ? 'is-mobile-focus' : ''}`} style={playerStyle(player.color)} aria-label={`${name}, ${character ? `${character.name}, ` : ''}${theme.suitName}${active ? ', текущий ход' : ''}`} data-player-color={player.color} data-character-id={character?.id}>
             <span className="prison-card-tag" aria-hidden="true">ДЕЛО № 00{theme.name.slice(-1)}</span>
             {active && <span className="player-current-turn-badge" aria-hidden="true"><span>▶</span> Сейчас ходит</span>}
             <Fleur className="player-crest" />
-            <div className="player-card-heading"><span className="player-suit" aria-hidden="true">{theme.suit}</span><h2 title={name}>{name}</h2>{isMe && <span className="player-you">Вы</span>}</div>
+            <div className="player-card-heading"><span className="player-suit" aria-hidden="true">{theme.suit}</span><h2 title={name}>{name}</h2>{(isMe || isBot) && <span className="player-you">{isBot ? 'Бот' : 'Вы'}</span>}</div>
             <span className="player-suit-name" title={character?.name}>{character?.title ?? theme.suitName}</span>
             {!connected && <span className="player-connection-state">Отключился</span>}
             <div className="player-avatar" aria-hidden="true" title={character?.name}>

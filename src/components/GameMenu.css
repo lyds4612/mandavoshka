@@ -1,0 +1,37 @@
+.game-menu { max-width: 1208px; margin: clamp(24px, 6vh, 72px) auto 32px; padding: clamp(20px, 4vw, 48px); border: 1px solid #b99a6370; border-radius: 12px; background: linear-gradient(135deg, #322418f5, #17110ff2); box-shadow: 0 20px 64px #0006, inset 0 1px #e5c48a1a; }
+.game-menu-intro { text-align: center; margin-bottom: 32px; }
+.game-menu-intro h2 { margin-top: 12px; color: var(--gold-light); font: clamp(28px, 4vw, 42px)/1.2 Georgia, serif; }
+.game-menu-intro p { margin-top: 12px; color: var(--muted); font-size: 14px; line-height: 1.5; }
+.game-mode-choices { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.game-mode-choice { min-width: 0; display: flex; flex-direction: column; align-items: stretch; text-align: left; gap: 20px; padding: 24px; border: 1px solid #b99a6355; border-radius: 8px; color: var(--ink); background: radial-gradient(ellipse at top left, #c5a3581a, transparent 70%), #110d0bcc; cursor: pointer; transition: border-color .18s, background-color .18s, box-shadow .18s; }
+.game-mode-choice:hover { border-color: var(--gold); background-color: #3a2b1ccc; box-shadow: 0 4px 24px #0004; }
+.game-mode-choice:focus-visible, .continue-local-game:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 4px; }
+.game-mode-icon { display: grid; place-items: center; width: 64px; height: 64px; border: 1px solid #b99a6355; border-radius: 50%; color: #e6c88f; background: #bc975a12; font: 40px Georgia, serif; }
+.game-mode-manual .game-mode-icon { color: #b2c88b; background: #5b85321a; }
+.game-mode-online .game-mode-icon { color: #9ecbd9; background: #427d991a; }
+.game-mode-copy { display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.game-mode-caption { color: var(--muted); font-size: 11px; letter-spacing: .05em; }
+.game-mode-copy > strong { color: var(--gold-light); font: 28px/1.2 Georgia, serif; }
+.game-mode-description { color: var(--muted); font-size: 13px; line-height: 1.6; }
+.game-mode-footer { display: flex; justify-content: space-between; gap: 8px; align-items: center; padding-top: 16px; border-top: 1px solid #b99a6333; color: #e7d2ac; font-size: 12px; }
+.game-mode-footer > span:last-child { font-size: 24px; }
+.game-menu-note { margin-top: 24px; color: var(--muted); text-align: center; font-size: 12px; line-height: 1.5; }
+.continue-local-game { width: 100%; display: flex; align-items: center; gap: 16px; padding: 16px 20px; margin-bottom: 20px; color: var(--ink); border: 1px solid #c3a36a99; border-radius: 8px; background: #b99a6317; cursor: pointer; text-align: left; }
+.continue-local-game > div { display: flex; flex: 1; flex-direction: column; gap: 6px; }
+.continue-local-game strong { font: 20px/1.3 Georgia, serif; }
+.continue-local-game > div > span { color: var(--muted); font-size: 12px; }
+.continue-local-game > span { color: var(--gold-light); font-size: 24px; }
+.App[data-theme='prison'] .game-menu { background: linear-gradient(135deg, #25383cf5, #17252af2); border-color: #8eaaa870; }
+.App[data-theme='prison'] .game-mode-choice { background-color: #142228cc; border-color: #8eaaa855; }
+.App[data-theme='prison'] .game-mode-choice:hover { background-color: #32484ccc; border-color: #b4c4b4; }
+@media (max-width: 700px) {
+    .game-menu { margin-top: 20px; padding: 20px 16px; }
+    .game-menu-intro { margin-bottom: 24px; }
+    .game-mode-choices { grid-template-columns: minmax(0, 1fr); gap: 12px; }
+    .game-mode-choice { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; padding: 16px; }
+    .game-mode-icon { width: 48px; height: 48px; font-size: 30px; }
+    .game-mode-copy > strong { font-size: 24px; }
+    .game-mode-description { font-size: 12px; line-height: 1.5; }
+    .game-mode-footer { grid-column: 2; padding-top: 8px; }
+    .game-menu-note { margin-top: 20px; }
+}

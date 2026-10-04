@@ -183,8 +183,8 @@ const gameSlice = createSlice({
             settleTurnState(state);
         },
 
-        resetGame() {
-            return createInitialGameState();
+        resetGame(state, { payload }) {
+            return createInitialGameState(payload);
         },
     },
 });

@@ -1,8 +1,10 @@
 .multiplayer-panel { max-width: 1208px; margin: 0 auto 32px; padding: 16px; background: #241b13ed; color: var(--ink); border: 1px solid #b99a635c; border-radius: 8px; }
-.online-setup summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 16px; font-weight: 600; list-style: none; }
-.online-setup summary::after { content: '+'; margin-left: auto; font-size: 20px; color: var(--gold); }
-.online-setup[open] summary::after { content: '−'; }
-.online-setup summary:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 4px; }
+.multiplayer-panel.is-character-setup { padding: clamp(16px, 3vw, 32px); box-shadow: 0 16px 48px #0005; }
+.multiplayer-panel.is-character-setup .online-setup > summary::after { content: none; }
+.online-setup > summary { display: flex; align-items: center; gap: 8px; cursor: pointer; font-size: 16px; font-weight: 600; list-style: none; }
+.online-setup > summary::after { content: '+'; margin-left: auto; font-size: 20px; color: var(--gold); }
+.online-setup[open] > summary::after { content: '−'; }
+.online-setup > summary:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 4px; }
 .online-caption { color: var(--muted); font-weight: 400; font-size: 12px; }
 .multiplayer-panel.is-invitation { max-width: 640px; margin-top: clamp(32px, 10vh, 112px); padding: 32px; box-shadow: 0 16px 48px #0005; }
 .online-invitation { display: grid; grid-template-columns: 56px minmax(0, 1fr); gap: 24px 16px; align-items: center; }
@@ -12,6 +14,9 @@
 .online-form.online-invite-form { grid-column: 1 / -1; grid-template-columns: minmax(0, 1fr) auto; margin-top: 0; }
 .online-invitation > .online-error { grid-column: 1 / -1; margin: 0; }
 .online-form { display: grid; grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr) auto; align-items: end; gap: 16px; margin-top: 16px; }
+.online-create-options { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: end; gap: 16px; padding-bottom: 16px; border-bottom: 1px solid #b99a6333; }
+.online-create-options .bot-count-picker { flex: 1; }
+.online-setup > .online-form > .online-nickname { grid-column: 1 / -1; max-width: 360px; }
 .online-form label { display: grid; gap: 8px; color: var(--muted); font-size: 12px; }
 .multiplayer-panel input { min-width: 0; width: 100%; padding: 8px; min-height: 44px; color: #f0dfb9; background: #17110c; border: 1px solid #b99a635c; border-radius: 4px; font-size: 14px; }
 .multiplayer-panel input:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
@@ -65,4 +70,5 @@
     .online-identity { font-size: 12px; }
     .online-room-actions .online-invite { flex-basis: 100%; }
     .online-room-actions .start-online-game { width: 100%; }
+    .online-create-options .create-room { width: 100%; }
 }

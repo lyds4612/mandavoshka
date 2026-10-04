@@ -238,6 +238,7 @@ export const multiplayerMiddleware = api => {
             } catch (error) { reportResumeError(error, saved, operationGeneration); }
         });
         if (action.type === 'online/start') return perform(() => request('room:start', {}));
+        if (action.type === 'online/setBots') return perform(() => request('room:bots', action.payload));
         if (action.type === 'online/leave') {
             return perform(async () => { try { if (socket?.connected && session) await request('room:leave', {}); } finally { clearConnection(); } });
         }

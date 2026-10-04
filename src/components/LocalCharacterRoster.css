@@ -1,0 +1,47 @@
+.local-character-roster { grid-column: 1 / -1; min-width: 0; padding-top: 16px; border-top: 1px solid #b99a6333; }
+.local-roster-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 12px; }
+.local-roster-heading h3 { color: var(--ink); font: 20px/1.3 Georgia, serif; }
+.local-roster-heading p { margin-top: 4px; color: var(--muted); font-size: 12px; line-height: 1.5; }
+.local-roster-heading .button { flex-shrink: 0; font-size: 12px; }
+.local-character-seats { display: grid; grid-template-columns: repeat(var(--local-seat-count, 4), minmax(0, 1fr)); gap: 8px; }
+.local-character-seat { min-width: 0; display: flex; align-items: center; gap: 12px; padding: 8px; border: 1px solid color-mix(in srgb, var(--player-accent) 65%, #b99a63); border-radius: 6px; background: color-mix(in srgb, var(--player-dark) 70%, #17110c); }
+.local-seat-portrait { position: relative; flex: 0 0 48px; height: 64px; border-radius: 4px; background: #0003; }
+.local-seat-portrait > span:first-child { display: grid; height: 100%; place-items: center; color: var(--muted); font: 28px Georgia, serif; }
+.local-seat-portrait .local-seat-piece { position: absolute; bottom: -3px; right: -6px; width: 18px; }
+.local-seat-copy { flex: 1; min-width: 0; }
+.local-seat-copy > span { display: block; margin-bottom: 4px; color: var(--muted); font-size: 11px; }
+.local-seat-copy strong { display: block; color: var(--ink); font-size: 12px; line-height: 1.4; }
+.online-form .local-seat-label { display: block; }
+.character-seat-picker { width: 100%; min-width: 0; min-height: 44px; padding: 4px; border: 1px solid #b99a6344; border-radius: 4px; background: #17110c; color: var(--ink); font: 12px 'Segoe UI', sans-serif; cursor: pointer; }
+.character-seat-picker:focus-visible { outline: 2px solid var(--gold-light); outline-offset: 2px; }
+.local-start-actions { grid-column: 1 / -1; display: flex; align-items: center; gap: 16px; }
+.local-start-actions .button { width: auto; min-width: 220px; }
+.local-start-actions p { color: var(--muted); font-size: 12px; line-height: 1.5; }
+.game-setup-heading { display: flex; justify-content: space-between; align-items: center; gap: 16px; margin-bottom: 24px; }
+.game-setup-heading h2 { margin-top: 8px; color: var(--gold-light); font: 28px/1.3 Georgia, serif; }
+.game-setup-heading > .button { flex-shrink: 0; }
+.local-setup-form { grid-template-columns: minmax(0, 1fr); }
+.local-setup-form .local-nickname { display: flex; align-items: center; flex-wrap: wrap; gap: 8px; max-width: 360px; }
+.local-nickname > span { opacity: .7; font-size: 11px; }
+.local-nickname > input { flex-basis: 100%; }
+.online-entry-heading { grid-column: 1 / -1; padding-top: 16px; margin-top: 4px; border-top: 1px solid #b99a6333; color: var(--muted); font-size: 13px; }
+.sr-only { position: absolute; width: 1px; height: 1px; padding: 0; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+@media (max-width: 980px) { .local-character-seats { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) {
+    .local-roster-heading { align-items: start; gap: 8px; }
+    .local-roster-heading h3 { font-size: 18px; }
+    .game-setup-heading { align-items: start; gap: 8px; }
+    .game-setup-heading h2 { font-size: 22px; }
+    .game-setup-heading > .button { padding: 8px; font-size: 12px; }
+    .local-roster-heading .button { padding: 6px 8px; }
+    .local-character-seat { gap: 8px; padding: 6px; }
+    .local-seat-portrait { flex-basis: 32px; height: 48px; }
+    .local-seat-portrait .local-seat-piece { width: 14px; right: -4px; }
+    .character-seat-picker { font-size: 11px; }
+    .local-start-actions { flex-direction: column; align-items: stretch; gap: 8px; }
+    .local-start-actions .button { width: 100%; min-width: 0; }
+    .App[data-online-phase='choosing']:has(.local-start-actions) { padding-bottom: calc(96px + env(safe-area-inset-bottom)); }
+    .App[data-online-phase='choosing'] .local-start-actions { position: fixed; left: 8px; right: 8px; bottom: calc(8px + env(safe-area-inset-bottom)); z-index: 108; padding: 8px 12px; border: 1px solid #b99a6380; border-radius: 8px; background: #241b13f5; box-shadow: 0 -4px 24px #0006; }
+    .App[data-online-phase='choosing'] .local-start-actions p { text-align: center; font-size: 11px; }
+    .App[data-theme='prison'][data-online-phase='choosing'] .local-start-actions { background: #1b2c32f5; border-color: #8eaaa880; }
+}

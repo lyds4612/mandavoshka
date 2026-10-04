@@ -1,7 +1,8 @@
 import { OUTER_LAYER_TILES_COUNT } from '../gameBoardInit.js';
 import { TILE_TYPES } from '../utils/tileUtils.js';
 
-export const LAST_HOME_PROGRESS = OUTER_LAYER_TILES_COUNT + 3;
+const FIRST_HOME_PROGRESS = OUTER_LAYER_TILES_COUNT + 1;
+export const LAST_HOME_PROGRESS = FIRST_HOME_PROGRESS + 3;
 
 export const isGameOver = (state) => Boolean(state.loser);
 
@@ -24,12 +25,12 @@ const deriveOuterProgress = (piece, player) =>
     (piece.tile - player.start + OUTER_LAYER_TILES_COUNT) % OUTER_LAYER_TILES_COUNT;
 
 export const getPieceProgress = (state, piece, player) => {
-    if (Number.isInteger(piece.progress)) {
-        return piece.progress;
+    if (isPieceAtHome(state, piece)) {
+        return FIRST_HOME_PROGRESS + state.tiles[piece.tile].position;
     }
 
-    if (isPieceAtHome(state, piece)) {
-        return OUTER_LAYER_TILES_COUNT + state.tiles[piece.tile].position;
+    if (Number.isInteger(piece.progress)) {
+        return piece.progress;
     }
 
     if (isPieceOnOuterTrack(piece)) {
@@ -58,8 +59,8 @@ export const calculateOrdinaryMove = ({ state, piece, player, moveValue }) => {
         return null;
     }
 
-    if (nextProgress >= OUTER_LAYER_TILES_COUNT) {
-        const homeTile = player.home[nextProgress - OUTER_LAYER_TILES_COUNT];
+    if (nextProgress >= FIRST_HOME_PROGRESS) {
+        const homeTile = player.home[nextProgress - FIRST_HOME_PROGRESS];
         if (state.pieces[player.color].some(candidate => candidate.tile === homeTile)) {
             return null;
         }
@@ -136,7 +137,7 @@ export const getPieceMovePreview = (state, piece, player) => {
     const progress = getPieceProgress(state, piece, player);
     const path = Array.from({ length: state.moves[0] }, (_, index) => {
         const next = progress + index + 1;
-        return next >= OUTER_LAYER_TILES_COUNT ? player.home[next - OUTER_LAYER_TILES_COUNT]
+        return next >= FIRST_HOME_PROGRESS ? player.home[next - FIRST_HOME_PROGRESS]
             : (player.start + next) % OUTER_LAYER_TILES_COUNT;
     });
     const landingTile = path[path.length - 1];
